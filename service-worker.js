@@ -1,10 +1,10 @@
-const CACHE_NAME = 'magic-wallpaper-v2';
+const CACHE_NAME = 'magic-wallpaper-v3';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/manifest.json'
+  './',
+  './index.html',
+  './styles.css',
+  './app.js',
+  './manifest.json'
 ];
 
 // Install service worker
