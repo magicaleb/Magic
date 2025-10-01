@@ -11,6 +11,7 @@ window.addEventListener('orientationchange', setVH);
 // Get elements
 const input = document.getElementById('file');
 const bg = document.getElementById('bg');
+const app = document.getElementById('app');
 const uploadBtn = document.getElementById('upload-btn');
 const resetBtn = document.getElementById('reset-btn');
 
@@ -21,6 +22,7 @@ input.addEventListener('change', async e => {
     
     const url = URL.createObjectURL(f);
     bg.src = url;
+    app.classList.add('has-image');
     
     // Persist to localStorage as data URL via canvas scaled to screen size
     const img = new Image();
@@ -55,7 +57,10 @@ input.addEventListener('change', async e => {
 
 // Restore persisted background
 const saved = localStorage.getItem('bgData');
-if (saved) bg.src = saved;
+if (saved) {
+    bg.src = saved;
+    app.classList.add('has-image');
+}
 
 // Upload button
 uploadBtn.addEventListener('click', () => {
