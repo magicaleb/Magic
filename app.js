@@ -1,60 +1,94 @@
-// Register service worker for PWA
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js')
-            .then(registration => console.log('Service Worker registered'))
-            .catch(err => console.log('Service Worker registration failed:', err));
-    });
+// Set viewport height fix
+function setVH() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
 }
+
+setVH();
+window.addEventListener('resize', setVH);
+window.addEventListener('orientationchange', setVH);
 
 // Get elements
-const imageUpload = document.getElementById('imageUpload');
-const resetButton = document.getElementById('resetButton');
+const input = document.getElementById('file');
+const bg = document.getElementById('bg');
+const app = document.getElementById('app');
+const uploadBtn = document.getElementById('upload-btn');
+const resetBtn = document.getElementById('reset-btn');
 
-// Load saved wallpaper from localStorage
-function loadWallpaper() {
-    const savedImage = localStorage.getItem('wallpaperImage');
-    if (savedImage) {
-        setWallpaper(savedImage);
-    }
-}
-
-// Set wallpaper
-function setWallpaper(imageDataUrl) {
-    document.body.classList.add('has-wallpaper');
-    const style = document.createElement('style');
-    style.id = 'wallpaper-style';
-    style.textContent = `body::before { background-image: url(${imageDataUrl}); }`;
-    document.head.appendChild(style);
-}
-
-// Reset wallpaper
-function resetWallpaper() {
-    localStorage.removeItem('wallpaperImage');
-    document.body.classList.remove('has-wallpaper');
-    // Remove the wallpaper style
-    const wallpaperStyle = document.getElementById('wallpaper-style');
-    if (wallpaperStyle) {
-        wallpaperStyle.remove();
-    }
-}
-
-// Handle image upload
-imageUpload.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file && file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const imageDataUrl = event.target.result;
-            localStorage.setItem('wallpaperImage', imageDataUrl);
-            setWallpaper(imageDataUrl);
-        };
-        reader.readAsDataURL(file);
-    }
+// Handle file input
+input.addEventListener('change', async e => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    
+    const url = URL.createObjectURL(f);
+    bg.src = url;
+    app.classList.add('has-image');
+    
+    // Persist to localStorage as data URL via canvas scaled to screen size
+    const img = new Image();
+    img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = screen.width * devicePixelRatio;
+        c.height = screen.height * devicePixelRatio;
+        const ctx = c.getContext('2d');
+        
+        // Cover-fit draw
+        const iw = img.width, ih = img.height;
+        const cw = c.width, ch = c.height;
+        const ir = iw / ih, cr = cw / ch;
+        let dw, dh, dx, dy;
+        if (ir > cr) {
+            dh = ch;
+            dw = dh * ir;
+            dx = (cw - dw) / 2;
+            dy = 0;
+        } else {
+            dw = cw;
+            dh = dw / ir;
+            dx = 0;
+            dy = (ch - dh) / 2;
+        }
+        ctx.drawImage(img, dx, dy, dw, dh);
+        localStorage.setItem('bgData', c.toDataURL('image/jpeg', 0.92));
+        URL.revokeObjectURL(url);
+    };
+    img.src = url;
 });
 
-// Handle reset button
-resetButton.addEventListener('click', resetWallpaper);
+// Restore persisted background
+const saved = localStorage.getItem('bgData');
+if (saved) {
+    bg.src = saved;
+    app.classList.add('has-image');
+}
 
-// Load wallpaper on page load
-loadWallpaper();
+// Upload button
+uploadBtn.addEventListener('click', () => {
+    input.click();
+});
+
+// Hard reset function
+async function hardReset() {
+    try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+        if (self.caches) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+        }
+        localStorage.clear();
+        sessionStorage.clear();
+    } finally {
+        location.replace('./index.html?refreshed=1&v=1&nosw=1');
+    }
+}
+
+window.hardReset = hardReset;
+
+// Reset button
+resetBtn.addEventListener('click', hardReset);
+
+// Debug: log display-mode
+if (matchMedia('(display-mode: standalone)').matches) {
+    console.log('standalone');
+}
