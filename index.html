@@ -2,23 +2,32 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#6200ea">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000">
     <title>Magic Wallpaper</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="./manifest.json?v=1">
+    <link rel="stylesheet" href="./styles.css?v=1">
 </head>
 <body>
-    <div class="container">
-        <h1>Magic Wallpaper</h1>
-        <div class="button-container">
-            <label for="imageUpload" class="button upload-button">
-                Upload Image
-            </label>
-            <input type="file" id="imageUpload" accept="image/*" style="display: none;">
-            <button id="resetButton" class="button reset-button">Reset</button>
+    <div id="app">
+        <img id="bg" alt="">
+        <div id="overlay">
+            <div class="card">
+                <button id="upload-btn" class="button">Upload Image</button>
+                <input type="file" id="file" accept="image/*" style="display: none;">
+                <button id="reset-btn" class="button">Reset</button>
+            </div>
         </div>
     </div>
-    <script src="app.js"></script>
+    <script>
+if (location.search.includes('nosw')) {
+  navigator.serviceWorker?.getRegistrations?.().then(rs=>rs.forEach(r=>r.unregister()));
+  caches?.keys?.().then(keys=>keys.forEach(k=>caches.delete(k)));
+} else if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js?v=1', {scope:'./'}).then(r=>r.update()).catch(()=>{});
+}
+    </script>
+    <script src="./app.js?v=1"></script>
 </body>
 </html>
