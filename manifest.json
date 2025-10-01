@@ -2,7 +2,7 @@
   "name": "Magic Wallpaper",
   "short_name": "Magic",
   "description": "Upload and set custom wallpapers",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#6200ea",
   "theme_color": "#6200ea",
