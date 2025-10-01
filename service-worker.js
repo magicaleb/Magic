@@ -1,4 +1,4 @@
-const CACHE_NAME = 'magic-wallpaper-v1';
+const CACHE_NAME = 'magic-wallpaper-v2';
 const urlsToCache = [
   '/',
   '/index.html',
