@@ -7,6 +7,19 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// Prevent multi-touch zoom/pan gestures
+document.addEventListener('touchstart', (e) => {
+    if (e.touches.length > 1) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+document.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 1) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
 // Get elements
 const imageUpload = document.getElementById('imageUpload');
 const resetButton = document.getElementById('resetButton');
@@ -21,22 +34,20 @@ function loadWallpaper() {
 
 // Set wallpaper
 function setWallpaper(imageDataUrl) {
-    document.body.classList.add('has-wallpaper');
-    const style = document.createElement('style');
-    style.id = 'wallpaper-style';
-    style.textContent = `body::before { background-image: url(${imageDataUrl}); }`;
-    document.head.appendChild(style);
+    const body = document.body;
+    body.style.background = 'black';
+    body.style.backgroundImage = `url('${imageDataUrl}')`;
+    body.style.backgroundSize = 'cover';
+    body.style.backgroundPosition = 'center';
+    body.style.backgroundRepeat = 'no-repeat';
 }
 
 // Reset wallpaper
 function resetWallpaper() {
     localStorage.removeItem('wallpaperImage');
-    document.body.classList.remove('has-wallpaper');
-    // Remove the wallpaper style
-    const wallpaperStyle = document.getElementById('wallpaper-style');
-    if (wallpaperStyle) {
-        wallpaperStyle.remove();
-    }
+    const body = document.body;
+    body.style.background = 'black';
+    body.style.backgroundImage = '';
 }
 
 // Handle image upload
