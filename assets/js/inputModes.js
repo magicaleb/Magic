@@ -186,7 +186,7 @@ class TwoSwipeMode {
      */
     setTimeout() {
         this.clearTimeout();
-        this.timeout = window.setTimeout(() => {
+        this.timeout = setTimeout(() => {
             this.reset();
         }, this.timeoutDuration);
     }
@@ -196,7 +196,7 @@ class TwoSwipeMode {
      */
     clearTimeout() {
         if (this.timeout) {
-            window.clearTimeout(this.timeout);
+            clearTimeout(this.timeout);
             this.timeout = null;
         }
     }
@@ -329,7 +329,7 @@ class InputModeManager {
         const savedMode = localStorage.getItem('inputMode');
         if (savedMode && this.modes[savedMode]) {
             this.setMode(savedMode, false); // Don't save again, we're loading
-        } else if (!savedMode) {
+        } else {
             // First time - save the default
             localStorage.setItem('inputMode', 'clockface');
         }

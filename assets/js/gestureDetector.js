@@ -10,6 +10,9 @@ class GestureDetector {
         this.touchEndY = 0;
         this.minSwipeDistance = 50; // Minimum distance in pixels to register as a swipe
         this.handlers = [];
+        this.element = null;
+        this.boundHandleTouchStart = null;
+        this.boundHandleTouchEnd = null;
     }
 
     /**
@@ -25,8 +28,25 @@ class GestureDetector {
      * @param {HTMLElement} element - Element to attach listeners to
      */
     initialize(element = document) {
-        element.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
-        element.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: true });
+        this.element = element;
+        this.boundHandleTouchStart = (e) => this.handleTouchStart(e);
+        this.boundHandleTouchEnd = (e) => this.handleTouchEnd(e);
+        
+        element.addEventListener('touchstart', this.boundHandleTouchStart, { passive: true });
+        element.addEventListener('touchend', this.boundHandleTouchEnd, { passive: true });
+    }
+
+    /**
+     * Clean up event listeners
+     */
+    destroy() {
+        if (this.element && this.boundHandleTouchStart && this.boundHandleTouchEnd) {
+            this.element.removeEventListener('touchstart', this.boundHandleTouchStart);
+            this.element.removeEventListener('touchend', this.boundHandleTouchEnd);
+            this.element = null;
+            this.boundHandleTouchStart = null;
+            this.boundHandleTouchEnd = null;
+        }
     }
 
     /**
