@@ -23,6 +23,8 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .container {
@@ -86,6 +88,116 @@ h1 {
 
 .button:active {
     transform: translateY(0);
+}
+
+.settings-button {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.settings-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+}
+
+.settings-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.95);
+    padding: 2rem;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    min-width: 300px;
+    max-width: 90%;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-panel h2 {
+    color: white;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.setting-group {
+    margin-bottom: 1.5rem;
+}
+
+.setting-group label {
+    color: white;
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.setting-select,
+.setting-input {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.setting-select:focus,
+.setting-input:focus {
+    border-color: #667eea;
+}
+
+.setting-select option {
+    background: #1a1a1a;
+    color: white;
+}
+
+.setting-unit {
+    color: rgba(255, 255, 255, 0.6);
+    margin-left: 0.5rem;
+}
+
+.setting-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 0.5rem;
+    cursor: pointer;
+}
+
+.setting-group label:has(input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.gesture-feedback {
+    position: fixed;
+    top: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    z-index: 1500;
+    font-size: 1.1rem;
+    text-align: center;
+    border: 2px solid rgba(102, 126, 234, 0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 }
 
 @media (max-width: 600px) {
