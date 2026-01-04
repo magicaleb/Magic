@@ -250,8 +250,8 @@ class InputModeManager {
         this.currentMode = null;
         this.gestureDetector = new GestureDetector();
         
-        // Initialize with clock face mode
-        this.setMode('clockface');
+        // Initialize with clock face mode (but don't save to localStorage yet)
+        this.setMode('clockface', false);
         
         // Setup gesture listener
         this.gestureDetector.onGesture((gesture) => {
@@ -271,8 +271,9 @@ class InputModeManager {
     /**
      * Set the active input mode
      * @param {string} modeName - Name of the mode to activate
+     * @param {boolean} saveToStorage - Whether to save to localStorage (default: true)
      */
-    setMode(modeName) {
+    setMode(modeName, saveToStorage = true) {
         if (this.modes[modeName]) {
             // Reset previous mode
             if (this.currentMode) {
@@ -282,7 +283,9 @@ class InputModeManager {
             this.currentMode = this.modes[modeName];
             
             // Save preference
-            localStorage.setItem('inputMode', modeName);
+            if (saveToStorage) {
+                localStorage.setItem('inputMode', modeName);
+            }
         }
     }
 
@@ -325,7 +328,10 @@ class InputModeManager {
     loadSavedMode() {
         const savedMode = localStorage.getItem('inputMode');
         if (savedMode && this.modes[savedMode]) {
-            this.setMode(savedMode);
+            this.setMode(savedMode, false); // Don't save again, we're loading
+        } else if (!savedMode) {
+            // First time - save the default
+            localStorage.setItem('inputMode', 'clockface');
         }
     }
 }
