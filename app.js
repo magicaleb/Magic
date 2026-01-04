@@ -7,7 +7,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Prevent multi-touch zoom/pan gestures
+// Prevent multi-touch zoom/pan gestures (but allow single touch for swipes)
 document.addEventListener('touchstart', (e) => {
     if (e.touches.length > 1) {
         e.preventDefault();
@@ -69,3 +69,79 @@ resetButton.addEventListener('click', resetWallpaper);
 
 // Load wallpaper on page load
 loadWallpaper();
+
+// Initialize gesture input system
+let inputModeManager;
+let settingsManager;
+
+// Initialize after DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Create input mode manager
+    inputModeManager = new InputModeManager();
+    inputModeManager.initialize();
+    inputModeManager.loadSavedMode();
+    
+    // Create settings manager
+    settingsManager = new SettingsManager(inputModeManager);
+    settingsManager.createUI();
+    
+    // Handle gesture completion
+    inputModeManager.onCompletion((position) => {
+        handleGestureInput(position);
+    });
+    
+    // Show initial feedback
+    settingsManager.updateFeedback();
+});
+
+/**
+ * Handle gesture input completion
+ * @param {number} position - Selected position (1-12)
+ */
+function handleGestureInput(position) {
+    console.log(`Gesture input: Position ${position}`);
+    
+    // Show feedback message
+    settingsManager.showMessage(`Selected: ${position} o'clock`);
+    
+    // Copy to clipboard if enabled
+    const clipboardEnabled = settingsManager.getSetting('clipboardCopy');
+    if (clipboardEnabled && navigator.clipboard) {
+        navigator.clipboard.writeText(position.toString())
+            .then(() => {
+                console.log('Copied to clipboard:', position);
+            })
+            .catch(err => {
+                console.error('Failed to copy to clipboard:', err);
+            });
+    }
+    
+    // Auto-submit after delay (placeholder for future functionality)
+    const autoSubmitDelay = settingsManager.getSetting('autoSubmitDelay');
+    setTimeout(() => {
+        // This is where you would submit the position to a trick/action
+        console.log('Auto-submit:', position);
+    }, autoSubmitDelay);
+    
+    // Update feedback for next gesture
+    setTimeout(() => {
+        settingsManager.updateFeedback();
+    }, autoSubmitDelay + 100);
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    // Press 's' to open settings
+    if (e.key === 's' || e.key === 'S') {
+        if (settingsManager) {
+            settingsManager.toggle();
+        }
+    }
+    
+    // Press 'Escape' to close settings
+    if (e.key === 'Escape') {
+        if (settingsManager) {
+            settingsManager.close();
+        }
+    }
+});
