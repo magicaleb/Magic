@@ -155,7 +155,7 @@ let advanceTimer=null
 let strokeGroupStartY=null
 const ADVANCE_DELAY=450
 
-function resizeCanvas(){const r=canvas.getBoundingClientRect();canvas.width=r.width*DPR;canvas.height=r.height*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);redraw()}
+function resizeCanvas(){DPR=window.devicePixelRatio||1;const r=canvas.getBoundingClientRect();const w=r.width||canvas.offsetWidth;const h=r.height||canvas.offsetHeight;if(!w||!h)return;canvas.width=w*DPR;canvas.height=h*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);redraw()}
 
 function drawScaffold(){
 if(!scaffold)return
@@ -264,7 +264,7 @@ canvas.addEventListener("mousemove",e=>{if(isDrawing)onMove(e)})
 canvas.addEventListener("mouseup",onEnd)
 
 window.addEventListener("resize",resizeCanvas)
-resizeCanvas()
+requestAnimationFrame(resizeCanvas)
 
 btnHangman.onclick=newSession
 btnClear.onclick=clearAll
