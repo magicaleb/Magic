@@ -100,6 +100,16 @@ h1 {
     box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
 }
 
+.hangman-button {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: white;
+}
+
+.hangman-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(67, 233, 123, 0.4);
+}
+
 .settings-panel {
     position: fixed;
     top: 50%;
