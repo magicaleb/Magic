@@ -46,7 +46,6 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:'Caveat',cursive;ba
 <button class="tool-btn" id="btnClear">Clear</button>
 <button class="tool-btn" id="btnHangman">Hangman</button>
 <button class="tool-btn" id="btnSolve">Solve</button>
-<button class="tool-btn" id="btnBack">← Back</button>
 </div>
 <div id="peek"></div>
 <div id="perfDot">.</div>
@@ -142,7 +141,6 @@ const btnHangman=document.getElementById("btnHangman")
 const btnClear=document.getElementById("btnClear")
 const btnUndo=document.getElementById("btnUndo")
 const btnSolve=document.getElementById("btnSolve")
-const btnBack=document.getElementById("btnBack")
 
 let DPR=window.devicePixelRatio||1
 let strokes=[]
@@ -270,7 +268,6 @@ btnHangman.onclick=newSession
 btnClear.onclick=clearAll
 btnUndo.onclick=()=>{strokes.pop();if(treeHistory.length)curNode=treeHistory.pop();redraw()}
 btnSolve.onclick=()=>{perfMode=false;hidePeek();perfDot.classList.remove("show")}
-btnBack.onclick=()=>{window.location.href="index.html"}
 
 let lastTap=0
 canvas.addEventListener("pointerdown",e=>{
