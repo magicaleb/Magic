@@ -1,1 +1,47 @@
-html,body{height:100%;width:100%;overflow:hidden;font-family:'Caveat',cursive;background:#e9e3d7}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman Game</title>
+    <style>
+        body {
+            background: #e9e3d7;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            text-align: center;
+        }
+        #word {
+            text-align: center;
+            font-size: 30px;
+        }
+        #letters {
+            text-align: center;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hangman Game</h1>
+    <div id="word"></div>
+    <div id="letters"></div>
+    <script>
+        const words = ['javascript', 'html', 'css', 'programming', 'hangman'];
+        let word = words[Math.floor(Math.random() * words.length)];
+        let guessed = [];
+
+        function displayWord() {
+            let display = word.split('').map(letter => (guessed.includes(letter) ? letter : '_')).join('');
+            document.getElementById('word').innerText = display;
+        }
+
+        function guessLetter(letter) {
+            guessed.push(letter);
+            displayWord();
+        }
+
+        displayWord();
+    </script>
+</body>
+</html>
