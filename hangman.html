@@ -1,47 +1,348 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hangman Game</title>
-    <style>
-        body {
-            background: #e9e3d7;
-            font-family: Arial, sans-serif;
-        }
-        h1 {
-            text-align: center;
-        }
-        #word {
-            text-align: center;
-            font-size: 30px;
-        }
-        #letters {
-            text-align: center;
-            font-size: 20px;
-        }
-    </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Hangman</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap');
+:root{--bg:#f4efe6;--paper:#f8f4ec;--ink:#1a1814;--faint:#cfc6b6;--toolbar:#ece6dc}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+html,body{height:100%;width:100%;overflow:hidden;font-family:'Caveat',cursive;background:#e9e3d7}
+#frame{position:fixed;inset:0;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));background:#e9e3d7}
+#app{width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg);border-radius:10px;border:2px solid rgba(0,0,0,.35);box-shadow:0 4px 12px rgba(0,0,0,.12);position:relative;overflow:hidden}
+#drawCanvas{flex:1;width:100%;display:block;cursor:crosshair;touch-action:none;background:linear-gradient(var(--paper),var(--paper))}
+#toolbar{height:56px;background:linear-gradient(var(--toolbar),#e6dfd3);border-top:1px solid var(--faint);display:flex;align-items:center;padding:0 6px;gap:4px;flex-shrink:0}
+.tool-btn{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;background:#f7f2e8;border:1px solid var(--faint);border-radius:8px;padding:7px 0;color:#6f6a61;cursor:pointer;flex:1;min-width:0;text-align:center}
+.tool-btn.active{background:var(--ink);color:#fff8ee;border-color:var(--ink)}
+#peek{position:absolute;bottom:0;right:2px;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.04em;opacity:0;pointer-events:none;color:#666}
+#peek.show{opacity:1}
+#perfDot{position:absolute;bottom:2px;left:8px;font-family:'Space Mono',monospace;font-size:14px;color:#666;opacity:0}
+#perfDot.show{opacity:.9}
+#settingsPanel{position:fixed;inset:0;background:#f4efe6;display:none;flex-direction:column;overflow:auto;padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));z-index:500}
+#settingsHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+#settingsHeader h1{font-family:'Space Mono',monospace;font-size:16px}
+#closeSettings{font-family:'Space Mono',monospace;font-size:12px;padding:6px 10px}
+.section{margin-bottom:28px}
+.section h2{font-family:'Space Mono',monospace;font-size:14px;margin-bottom:8px}
+#wordView{font-family:monospace;font-size:12px;white-space:pre-wrap;background:white;border:1px solid #ccc;padding:8px;max-height:200px;overflow:auto}
+#depthStats{font-family:monospace;font-size:12px;margin-top:8px;background:white;border:1px solid #ccc;padding:8px}
+#firstLetter{font-family:monospace;font-size:12px;margin-top:6px;background:white;border:1px solid #ccc;padding:6px;display:inline-block}
+#addWordInput{width:100%;padding:6px;margin-top:6px;font-family:monospace}
+#newListName{width:100%;padding:6px;margin-top:6px;font-family:monospace}
+#newListWords{width:100%;height:140px;padding:6px;margin-top:6px;font-family:monospace}
+</style>
 </head>
 <body>
-    <h1>Hangman Game</h1>
-    <div id="word"></div>
-    <div id="letters"></div>
-    <script>
-        const words = ['javascript', 'html', 'css', 'programming', 'hangman'];
-        let word = words[Math.floor(Math.random() * words.length)];
-        let guessed = [];
+<div id="frame">
+<div id="app">
+<canvas id="drawCanvas"></canvas>
+<div id="toolbar">
+<button class="tool-btn active" id="btnDraw">Draw</button>
+<button class="tool-btn" id="btnErase">Erase</button>
+<button class="tool-btn" id="btnUndo">Undo</button>
+<button class="tool-btn" id="btnClear">Clear</button>
+<button class="tool-btn" id="btnHangman">Hangman</button>
+<button class="tool-btn" id="btnSolve">Solve</button>
+</div>
+<div id="peek"></div>
+<div id="perfDot">.</div>
+</div>
+</div>
 
-        function displayWord() {
-            let display = word.split('').map(letter => (guessed.includes(letter) ? letter : '_')).join('');
-            document.getElementById('word').innerText = display;
-        }
+<div id="settingsPanel">
+<div id="settingsHeader">
+<h1>Settings</h1>
+<button id="closeSettings">Close</button>
+</div>
 
-        function guessLetter(letter) {
-            guessed.push(letter);
-            displayWord();
-        }
+<div class="section">
+<h2>Active Word List</h2>
+<select id="listSelect"></select>
+<button id="useList">Use Selected</button>
+<div id="firstLetter"></div>
+</div>
 
-        displayWord();
-    </script>
+<div class="section">
+<h2>Create New List</h2>
+<input id="newListName" placeholder="LIST NAME"/>
+<textarea id="newListWords" placeholder="PASTE WORDS (ONE PER LINE)"></textarea>
+<button id="createListBtn">Create List</button>
+</div>
+
+<div class="section">
+<h2>Add Word To Current List</h2>
+<input id="addWordInput" placeholder="TYPE WORD AND PRESS ENTER"/>
+</div>
+
+<div class="section">
+<h2>Words</h2>
+<div id="wordView"></div>
+</div>
+
+<div class="section">
+<h2>Decision Depth</h2>
+<div id="depthStats"></div>
+</div>
+</div>
+
+<script>
+const DEFAULT_LIST=["AIRFRESHENER","AIRPODS","BACKPACK","BASKET","BATHTUB","BATTERY","BED","BENCH","BLANKET","BLENDER","BOOK","BOOKEND","BOTTLE","BOWL","BRACELET","BROOM","BRUSH","BUCKET","CABINET","CALENDAR","CAMERA","CANDLE","CARDS","CARPET","CHAIR","CHARGER","CLOCK","COASTER","COMB","COMPUTER","COUCH","DESK","DOORKNOB","DRAWER","DRESSER","DUSTPAN","ENVELOPE","FRIDGE","GLASS","GLASSES","GLUE","GRATER","GUITAR","HAIRBRUSH","HAIRDRYER","HAIRTIE","HAMMER","HANGER","HEADPHONES","HEATER","HIGHLIGHTER","IRON","KETTLE","KEYBOARD","KEYS","KNIFE","LADLE","LAMP","LIGHTBULB","LIGHTER","LIPBALM","LOTION","MAGAZINE","MARKER","MATCHES","MATTRESS","MIRROR","MOP","MOUSE","MUG","NAILCLIPPERS","NAPKIN","NECKLACE","NOTEBOOK","PAN","PANTRY","PEELER","PEN","PENCIL","PERFUME","PHONE","PICTURE","PILLOW","PLANT","PLATE","PLUNGER","PRINTER","RAZOR","REMOTE","RING","ROPE","SCALE","SCISSORS","SCREWDRIVER","SHAMPOO","SHARPIE","SINK","SOAP","SPEAKER","SPATULA","SPONGE","SPOON","TABLE","TELEVISION","TISSUES","TOASTER","TOILET","TOILETPAPER","TOOLBOX","TOOTHBRUSH","TOOTHPASTE","TOWEL","TRASHCAN","TUPPERWARE","TWEEZERS","UMBRELLA","VACUUM","WALLET","WASHCLOTH","WHISK","WRENCH"]
+
+const CAR_BRANDS=["TOYOTA","HONDA","FORD","CHEVROLET","NISSAN","BMW","MERCEDES","AUDI","VOLKSWAGEN","HYUNDAI","KIA","SUBARU","MAZDA","TESLA","LEXUS","ACURA","INFINITI","VOLVO","JAGUAR","LANDROVER","PORSCHE","FERRARI","LAMBORGHINI","MASERATI","ALFAROMEO","FIAT","PEUGEOT","RENAULT","CITROEN","SKODA","SEAT","MINI","BENTLEY","ROLLSROYCE","ASTONMARTIN","BUGATTI","MCLAREN","GENESIS","RAM","DODGE","JEEP","CADILLAC","LINCOLN","BUICK","CHRYSLER","MITSUBISHI","SUZUKI","DAIHATSU","GEELY","TATA"]
+
+let lists=JSON.parse(localStorage.getItem("hangmanLists")||"{}")
+if(!lists.default)lists.default=DEFAULT_LIST
+if(!lists.cars)lists.cars=CAR_BRANDS
+let currentListName=localStorage.getItem("hangmanActiveList")||"default"
+
+function getWords(){return lists[currentListName]}
+
+const hasL=(w,ch)=>w.includes(ch)
+
+function bestSplit(c){
+const counts={}
+for(const w of c){for(const ch of new Set(w)){counts[ch]=(counts[ch]||0)+1}}
+const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1])
+for(const [ch,cnt] of sorted){
+if(cnt===0||cnt===c.length)continue
+const yes=c.filter(w=>hasL(w,ch))
+const no=c.filter(w=>!hasL(w,ch))
+if(yes.length&&no.length)return{ch,yes,no}
+}
+return null
+}
+
+function buildTree(c){
+if(c.length<=1)return{leaf:true,word:c[0]||null}
+const s=bestSplit(c)
+if(!s)return{leaf:true,word:c[0]}
+return{leaf:false,ch:s.ch,yesNode:buildTree(s.yes),noNode:buildTree(s.no)}
+}
+
+function buildRootFromList(words){
+const split=bestSplit(words)
+if(!split)return{leaf:true,word:words[0]}
+return{leaf:false,ch:split.ch,yesNode:buildTree(split.yes),noNode:buildTree(split.no)}
+}
+
+function buildRoot(){return buildRootFromList(getWords())}
+
+function getFirstLetter(words){const split=bestSplit(words);return split?split.ch:"?"}
+
+let root=buildRoot()
+let curNode=root
+
+const canvas=document.getElementById("drawCanvas")
+const ctx=canvas.getContext("2d")
+const btnHangman=document.getElementById("btnHangman")
+const btnClear=document.getElementById("btnClear")
+const btnUndo=document.getElementById("btnUndo")
+const btnSolve=document.getElementById("btnSolve")
+
+let DPR=window.devicePixelRatio||1
+let strokes=[]
+let currentStroke=null
+let treeHistory=[]
+let perfMode=false
+let scaffold=false
+
+let advanceTimer=null
+let strokeGroupStartY=null
+const ADVANCE_DELAY=450
+
+function resizeCanvas(){DPR=window.devicePixelRatio||1;const r=canvas.getBoundingClientRect();const w=r.width||canvas.offsetWidth;const h=r.height||canvas.offsetHeight;if(!w||!h)return;canvas.width=w*DPR;canvas.height=h*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);redraw()}
+
+function drawScaffold(){
+if(!scaffold)return
+const W=canvas.clientWidth
+const H=canvas.clientHeight
+ctx.lineWidth=3
+ctx.beginPath()
+ctx.moveTo(W*.15,H*.55)
+ctx.lineTo(W*.45,H*.55)
+ctx.moveTo(W*.22,H*.55)
+ctx.lineTo(W*.22,H*.12)
+ctx.moveTo(W*.22,H*.12)
+ctx.lineTo(W*.40,H*.12)
+ctx.moveTo(W*.40,H*.12)
+ctx.lineTo(W*.40,H*.18)
+ctx.stroke()
+}
+
+function redraw(){
+const w=canvas.clientWidth
+const h=canvas.clientHeight
+ctx.clearRect(0,0,w,h)
+ctx.fillStyle="#f8f4ec"
+ctx.fillRect(0,0,w,h)
+ctx.lineCap="round"
+ctx.lineJoin="round"
+drawScaffold()
+for(const s of strokes){
+ctx.lineWidth=s.lineWidth
+ctx.beginPath()
+ctx.moveTo(s.points[0][0],s.points[0][1])
+for(let i=1;i<s.points.length;i++)ctx.lineTo(s.points[i][0],s.points[i][1])
+ctx.stroke()
+}
+}
+
+function isYesZone(y){return y>canvas.clientHeight*.65}
+
+const peek=document.getElementById("peek")
+const perfDot=document.getElementById("perfDot")
+
+function showPeek(t){peek.textContent=t;peek.classList.add("show")}
+function hidePeek(){peek.classList.remove("show")}
+
+function advanceTree(isYes){if(!curNode||curNode.leaf)return;treeHistory.push(curNode);curNode=isYes?curNode.yesNode:curNode.noNode}
+
+function newSession(){strokes=[];treeHistory=[];root=buildRoot();curNode=root;perfMode=true;scaffold=true;perfDot.classList.add("show");redraw()}
+
+function clearAll(){strokes=[];treeHistory=[];perfMode=false;scaffold=false;perfDot.classList.remove("show");redraw()}
+
+function getPos(e){const r=canvas.getBoundingClientRect();const src=e.touches?e.touches[0]:e;return[src.clientX-r.left,src.clientY-r.top]}
+
+let isDrawing=false
+
+function scheduleAdvance(){
+clearTimeout(advanceTimer)
+advanceTimer=setTimeout(()=>{
+if(perfMode&&strokeGroupStartY!==null&&!curNode.leaf){advanceTree(isYesZone(strokeGroupStartY))}
+strokeGroupStartY=null
+},ADVANCE_DELAY)
+}
+
+function onStart(e){
+e.preventDefault()
+clearTimeout(advanceTimer)
+const[x,y]=getPos(e)
+if(strokeGroupStartY===null)strokeGroupStartY=y
+isDrawing=true
+if(perfMode){
+if(curNode.leaf)showPeek(curNode.word)
+else{
+const nextNode=isYesZone(strokeGroupStartY)?curNode.yesNode:curNode.noNode
+if(nextNode){
+if(nextNode.leaf)showPeek(nextNode.word)
+else showPeek(nextNode.ch)
+}
+}
+}
+currentStroke={points:[[x,y]],lineWidth:4}
+ctx.lineWidth=4
+ctx.beginPath()
+ctx.moveTo(x,y)
+}
+
+function onMove(e){
+if(!isDrawing)return
+const[x,y]=getPos(e)
+currentStroke.points.push([x,y])
+ctx.lineTo(x,y)
+ctx.stroke()
+}
+
+function onEnd(){
+hidePeek()
+if(!isDrawing)return
+isDrawing=false
+strokes.push(currentStroke)
+scheduleAdvance()
+}
+
+canvas.addEventListener("touchstart",onStart,{passive:false})
+canvas.addEventListener("touchmove",onMove,{passive:false})
+canvas.addEventListener("touchend",onEnd,{passive:false})
+canvas.addEventListener("mousedown",onStart)
+canvas.addEventListener("mousemove",e=>{if(isDrawing)onMove(e)})
+canvas.addEventListener("mouseup",onEnd)
+
+window.addEventListener("resize",resizeCanvas)
+requestAnimationFrame(resizeCanvas)
+
+btnHangman.onclick=newSession
+btnClear.onclick=clearAll
+btnUndo.onclick=()=>{strokes.pop();if(treeHistory.length)curNode=treeHistory.pop();redraw()}
+btnSolve.onclick=()=>{perfMode=false;hidePeek();perfDot.classList.remove("show")}
+
+let lastTap=0
+canvas.addEventListener("pointerdown",e=>{
+if(e.clientX>window.innerWidth*.75&&e.clientY<window.innerHeight*.25){
+const now=Date.now()
+if(now-lastTap<300)openSettings()
+lastTap=now
+}
+})
+
+function openSettings(){document.getElementById("settingsPanel").style.display="flex";refreshSettings()}
+function closeSettings(){document.getElementById("settingsPanel").style.display="none"}
+document.getElementById("closeSettings").onclick=closeSettings
+
+function refreshSettings(){
+const sel=document.getElementById("listSelect")
+sel.innerHTML=""
+for(const k in lists){const o=document.createElement("option");o.value=k;o.textContent=k;sel.appendChild(o)}
+sel.value=currentListName
+renderWords()
+renderDepthStats()
+renderFirstLetter()
+}
+
+function renderWords(){document.getElementById("wordView").textContent=lists[currentListName].join(", ")}
+
+function renderFirstLetter(){const letter=getFirstLetter(lists[currentListName]);document.getElementById("firstLetter").textContent="First Letter: "+letter}
+
+function depthCount(node,depth,counts){if(!node)return;if(node.leaf){counts[depth]=(counts[depth]||0)+1;return}depthCount(node.yesNode,depth+1,counts);depthCount(node.noNode,depth+1,counts)}
+
+function renderDepthStats(){
+const counts={}
+const r=buildRoot()
+depthCount(r,0,counts)
+let html=""
+const depths=Object.keys(counts).sort((a,b)=>a-b)
+for(const d of depths){html+="Depth "+d+": "+counts[d]+" words<br>"}
+document.getElementById("depthStats").innerHTML=html
+}
+
+document.getElementById("useList").onclick=()=>{
+currentListName=document.getElementById("listSelect").value
+localStorage.setItem("hangmanActiveList",currentListName)
+root=buildRoot()
+curNode=root
+refreshSettings()
+}
+
+document.getElementById("addWordInput").addEventListener("keydown",e=>{
+if(e.key!="Enter")return
+const w=e.target.value.trim().toUpperCase()
+if(!w)return
+if(!lists[currentListName].includes(w))lists[currentListName].push(w)
+localStorage.setItem("hangmanLists",JSON.stringify(lists))
+root=buildRoot()
+curNode=root
+strokes=[]
+treeHistory=[]
+redraw()
+e.target.value=""
+refreshSettings()
+})
+
+document.getElementById("createListBtn").onclick=()=>{
+const name=document.getElementById("newListName").value.trim()
+const raw=document.getElementById("newListWords").value
+if(!name||!raw)return
+const words=raw.split("\n").map(w=>w.trim().toUpperCase()).filter(w=>w.length>0)
+if(words.length===0)return
+lists[name]=Array.from(new Set(words))
+localStorage.setItem("hangmanLists",JSON.stringify(lists))
+document.getElementById("newListName").value=""
+document.getElementById("newListWords").value=""
+refreshSettings()
+}
+</script>
 </body>
 </html>
