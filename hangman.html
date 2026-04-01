@@ -3,25 +3,23 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Hangman</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap');
 :root{--bg:#f4efe6;--paper:#f8f4ec;--ink:#1a1814;--faint:#cfc6b6;--toolbar:#ece6dc}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
-html,body{height:100%;width:100%;overflow:hidden;font-family:'Caveat',cursive;background:#e9e3d7}
-#frame{position:fixed;inset:0;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));background:#e9e3d7}
+html,body{height:100%;width:100%;overflow:hidden;font-family:'Caveat',cursive;background:#ddd}
+#frame{position:fixed;inset:0;padding:10px;background:#e9e3d7}
 #app{width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg);border-radius:10px;border:2px solid rgba(0,0,0,.35);box-shadow:0 4px 12px rgba(0,0,0,.12);position:relative;overflow:hidden}
 #drawCanvas{flex:1;width:100%;display:block;cursor:crosshair;touch-action:none;background:linear-gradient(var(--paper),var(--paper))}
-#toolbar{height:56px;background:linear-gradient(var(--toolbar),#e6dfd3);border-top:1px solid var(--faint);display:flex;align-items:center;padding:0 6px;gap:4px;flex-shrink:0}
-.tool-btn{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;background:#f7f2e8;border:1px solid var(--faint);border-radius:8px;padding:7px 0;color:#6f6a61;cursor:pointer;flex:1;min-width:0;text-align:center}
+#toolbar{height:56px;background:linear-gradient(var(--toolbar),#e6dfd3);border-top:1px solid var(--faint);display:flex;align-items:center;justify-content:space-around;padding:0 8px;flex-shrink:0}
+.tool-btn{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#f7f2e8;border:1px solid var(--faint);border-radius:10px;padding:7px 13px;color:#6f6a61;cursor:pointer}
 .tool-btn.active{background:var(--ink);color:#fff8ee;border-color:var(--ink)}
 #peek{position:absolute;bottom:0;right:2px;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.04em;opacity:0;pointer-events:none;color:#666}
 #peek.show{opacity:1}
 #perfDot{position:absolute;bottom:2px;left:8px;font-family:'Space Mono',monospace;font-size:14px;color:#666;opacity:0}
 #perfDot.show{opacity:.9}
-#settingsPanel{position:fixed;inset:0;background:#f4efe6;display:none;flex-direction:column;overflow:auto;padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));z-index:500}
+#settingsPanel{position:fixed;inset:0;background:#f4efe6;display:none;flex-direction:column;overflow:auto;padding:24px;z-index:500}
 #settingsHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
 #settingsHeader h1{font-family:'Space Mono',monospace;font-size:16px}
 #closeSettings{font-family:'Space Mono',monospace;font-size:12px;padding:6px 10px}
@@ -33,6 +31,11 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:'Caveat',cursive;ba
 #addWordInput{width:100%;padding:6px;margin-top:6px;font-family:monospace}
 #newListName{width:100%;padding:6px;margin-top:6px;font-family:monospace}
 #newListWords{width:100%;height:140px;padding:6px;margin-top:6px;font-family:monospace}
+#helpOverlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;z-index:999}
+#helpOverlay .line{position:absolute;left:0;right:0;border-top:2px dashed #fff}
+#helpOverlay .box{position:absolute;border:2px solid red;border-radius:8px}
+#helpOverlay .content{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:90%;max-width:420px;max-height:80vh;overflow:auto;color:#fff;font-family:'Space Mono',monospace;font-size:13px;line-height:1.6;background:rgba(0,0,0,.6);padding:18px;border-radius:14px}
+#helpOverlay button{position:absolute;top:16px;right:16px}
 </style>
 </head>
 <body>
@@ -153,7 +156,7 @@ let advanceTimer=null
 let strokeGroupStartY=null
 const ADVANCE_DELAY=450
 
-function resizeCanvas(){DPR=window.devicePixelRatio||1;const r=canvas.getBoundingClientRect();const w=r.width||canvas.offsetWidth;const h=r.height||canvas.offsetHeight;if(!w||!h)return;canvas.width=w*DPR;canvas.height=h*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);redraw()}
+function resizeCanvas(){const r=canvas.getBoundingClientRect();canvas.width=r.width*DPR;canvas.height=r.height*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);redraw()}
 
 function drawScaffold(){
 if(!scaffold)return
@@ -195,8 +198,18 @@ function isYesZone(y){return y>canvas.clientHeight*.65}
 const peek=document.getElementById("peek")
 const perfDot=document.getElementById("perfDot")
 
-function showPeek(t){peek.textContent=t;peek.classList.add("show")}
-function hidePeek(){peek.classList.remove("show")}
+function showPeek(t){
+if(t && t.length===1){
+btnSolve.textContent = "Solv" + t
+} else {
+peek.textContent=t
+peek.classList.add("show")
+}
+}
+function hidePeek(){
+peek.classList.remove("show")
+btnSolve.textContent = "Solve"
+}
 
 function advanceTree(isYes){if(!curNode||curNode.leaf)return;treeHistory.push(curNode);curNode=isYes?curNode.yesNode:curNode.noNode}
 
@@ -262,12 +275,24 @@ canvas.addEventListener("mousemove",e=>{if(isDrawing)onMove(e)})
 canvas.addEventListener("mouseup",onEnd)
 
 window.addEventListener("resize",resizeCanvas)
-requestAnimationFrame(resizeCanvas)
+resizeCanvas()
 
 btnHangman.onclick=newSession
 btnClear.onclick=clearAll
 btnUndo.onclick=()=>{strokes.pop();if(treeHistory.length)curNode=treeHistory.pop();redraw()}
-btnSolve.onclick=()=>{perfMode=false;hidePeek();perfDot.classList.remove("show")}
+
+btnSolve.onclick=()=>{
+perfMode=false
+hidePeek()
+perfDot.classList.remove("show")
+
+const cutoff=canvas.clientHeight*0.55
+strokes=strokes.filter(s=>{
+return s.points.some(p=>p[1]<=cutoff)
+})
+
+redraw()
+}
 
 let lastTap=0
 canvas.addEventListener("pointerdown",e=>{
@@ -302,21 +327,21 @@ function renderDepthStats(){
 const counts={}
 const r=buildRoot()
 depthCount(r,0,counts)
-let html=""
+let html="" 
 const depths=Object.keys(counts).sort((a,b)=>a-b)
 for(const d of depths){html+="Depth "+d+": "+counts[d]+" words<br>"}
 document.getElementById("depthStats").innerHTML=html
 }
 
-document.getElementById("useList").onclick=()=>{
-currentListName=document.getElementById("listSelect").value
+useList.onclick=()=>{
+currentListName=listSelect.value
 localStorage.setItem("hangmanActiveList",currentListName)
 root=buildRoot()
 curNode=root
 refreshSettings()
 }
 
-document.getElementById("addWordInput").addEventListener("keydown",e=>{
+addWordInput.addEventListener("keydown",e=>{
 if(e.key!="Enter")return
 const w=e.target.value.trim().toUpperCase()
 if(!w)return
@@ -331,7 +356,7 @@ e.target.value=""
 refreshSettings()
 })
 
-document.getElementById("createListBtn").onclick=()=>{
+createListBtn.onclick=()=>{
 const name=document.getElementById("newListName").value.trim()
 const raw=document.getElementById("newListWords").value
 if(!name||!raw)return
@@ -343,6 +368,36 @@ document.getElementById("newListName").value=""
 document.getElementById("newListWords").value=""
 refreshSettings()
 }
+</script>
+<div id="helpOverlay">
+<div class="content">
+<b>Quick Start</b><br><br>
+• Have them think of an everyday object they're holding<br>
+• Tap Hangman to start<br>
+• Begin with E — ask if it's in their word<br><br>
+• If no → draw a hangman part<br>
+• If yes → write it below the gallows<br><br>
+• Location of each input advances anagram accordingly<br>
+• SOLVE = peek next letter (visible only while finger is on screen)<br>
+• Undo = remove last stroke<br><br>
+• Keep going until the word appears<br>
+• Tap SOLVE to reveal, Hangman to reset<br>
+• Double-tap top-right for Settings<br><br>
+Tip: I emphasize that, unlike normal hangman, I don't know the word length, letter positions, or repeats.
+</div>
+<button id="closeHelp">Done</button>
+</div>
+<script>
+const helpOverlay=document.getElementById('helpOverlay')
+let helpTap=0
+canvas.addEventListener('pointerdown',e=>{
+if(e.clientX<window.innerWidth*.25&&e.clientY<window.innerHeight*.25){
+const now=Date.now()
+if(now-helpTap<300){helpOverlay.style.display='block'}
+helpTap=now
+}
+})
+document.getElementById('closeHelp').onclick=()=>helpOverlay.style.display='none'
 </script>
 </body>
 </html>
