@@ -9,8 +9,8 @@
 :root{--bg:#f4efe6;--paper:#f8f4ec;--ink:#1a1814;--faint:#cfc6b6;--toolbar:#ece6dc}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
 html,body{height:100%;width:100%;overflow:hidden;font-family:'Caveat',cursive;background:#ddd}
-#frame{position:fixed;inset:0;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));background:#e9e3d7;display:flex;flex-direction:column}
-#app{width:100%;flex:1;min-height:0;display:flex;flex-direction:column;background:var(--bg);border-radius:10px;border:2px solid rgba(0,0,0,.35);box-shadow:0 4px 12px rgba(0,0,0,.12);position:relative;overflow:hidden}
+#frame{position:fixed;inset:0;background:#e9e3d7}
+#app{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));left:max(10px,env(safe-area-inset-left));display:flex;flex-direction:column;background:var(--bg);border-radius:10px;border:2px solid rgba(0,0,0,.35);box-shadow:0 4px 12px rgba(0,0,0,.12);overflow:hidden}
 #drawCanvas{flex:1;width:100%;display:block;cursor:crosshair;touch-action:none;background:linear-gradient(var(--paper),var(--paper))}
 #toolbar{height:56px;background:linear-gradient(var(--toolbar),#e6dfd3);border-top:1px solid var(--faint);display:flex;align-items:center;justify-content:space-around;padding:0 8px;flex-shrink:0}
 .tool-btn{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#f7f2e8;border:1px solid var(--faint);border-radius:10px;padding:7px 13px;color:#6f6a61;cursor:pointer}
@@ -25,7 +25,7 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:'Caveat',cursive;ba
 #closeSettings{font-family:'Space Mono',monospace;font-size:12px;padding:6px 10px}
 .section{margin-bottom:28px}
 .section h2{font-family:'Space Mono',monospace;font-size:14px;margin-bottom:8px}
-#wordView{font-family:monospace;font-size:12px;white-space:pre-wrap;background:white;border:1px solid #ccc;padding:8px;max-height:200px;overflow:auto}
+#wordView{font-family:monospace;font-size:12px;background:white;border:1px solid #ccc;padding:8px;max-height:200px;overflow:auto}
 #depthStats{font-family:monospace;font-size:12px;margin-top:8px;background:white;border:1px solid #ccc;padding:8px}
 #firstLetter{font-family:monospace;font-size:12px;margin-top:6px;background:white;border:1px solid #ccc;padding:6px;display:inline-block}
 #addWordInput{width:100%;padding:6px;margin-top:6px;font-family:monospace}
@@ -57,7 +57,7 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:'Caveat',cursive;ba
 
 <div id="settingsPanel">
 <div id="settingsHeader">
-<h1>Settings</h1>
+<div><h1>Settings</h1><div style="font-family:'Space Mono',monospace;font-size:10px;color:#999;margin-top:2px">V1.1.5 · Apr 3, 2026 4:36 PM MDT</div></div>
 <button id="closeSettings">Close</button>
 </div>
 
@@ -317,7 +317,30 @@ renderDepthStats()
 renderFirstLetter()
 }
 
-function renderWords(){document.getElementById("wordView").textContent=lists[currentListName].join(", ")}
+function renderWords(){
+const container=document.getElementById("wordView")
+container.innerHTML=""
+const words=lists[currentListName].slice().sort()
+words.forEach(w=>{
+const row=document.createElement("div")
+row.style.cssText="display:flex;justify-content:space-between;align-items:center;padding:2px 0;border-bottom:1px solid #eee"
+const label=document.createElement("span")
+label.textContent=w
+const btn=document.createElement("button")
+btn.textContent="×"
+btn.style.cssText="background:none;border:none;color:#c00;font-size:16px;font-weight:700;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0"
+btn.onclick=()=>{
+lists[currentListName]=lists[currentListName].filter(x=>x!==w)
+localStorage.setItem("hangmanLists",JSON.stringify(lists))
+root=buildRoot()
+curNode=root
+refreshSettings()
+}
+row.appendChild(label)
+row.appendChild(btn)
+container.appendChild(row)
+})
+}
 
 function renderFirstLetter(){const letter=getFirstLetter(lists[currentListName]);document.getElementById("firstLetter").textContent="First Letter: "+letter}
 
