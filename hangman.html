@@ -489,8 +489,10 @@ let exploreHistory=[]
 let exploreNode=null
 let exploreWords=[]
 
-function isExploreModeEnabled(){return localStorage.getItem("exploreMode")==="1"}
+const EXPLORE_ON="1"
+function isExploreModeEnabled(){return localStorage.getItem("exploreMode")===EXPLORE_ON}
 
+function pluralWords(n){return n+" word"+(n!==1?"s":"")}
 function syncExploreButton(){
   document.getElementById("btnExplore").style.display=isExploreModeEnabled()?"":"none"
 }
@@ -498,7 +500,7 @@ function syncExploreButton(){
 const exploreModeToggle=document.getElementById("exploreModeToggle")
 exploreModeToggle.checked=isExploreModeEnabled()
 exploreModeToggle.addEventListener("change",()=>{
-  localStorage.setItem("exploreMode",exploreModeToggle.checked?"1":"0")
+  localStorage.setItem("exploreMode",exploreModeToggle.checked?EXPLORE_ON:"0")
   syncExploreButton()
 })
 syncExploreButton()
@@ -546,7 +548,7 @@ function renderExplore(){
     const noWords=words.filter(w=>!w.includes(node.ch))
 
     // YES card
-    document.getElementById("exploreYesCount").textContent=yesWords.length+" word"+(yesWords.length!==1?"s":"")
+    document.getElementById("exploreYesCount").textContent=pluralWords(yesWords.length)
     if(node.yesNode.leaf){
       document.getElementById("exploreYesNext").textContent=""
       document.getElementById("exploreYesLeaf").textContent=node.yesNode.word||"(none)"
@@ -556,7 +558,7 @@ function renderExplore(){
     }
 
     // NO card
-    document.getElementById("exploreNoCount").textContent=noWords.length+" word"+(noWords.length!==1?"s":"")
+    document.getElementById("exploreNoCount").textContent=pluralWords(noWords.length)
     if(node.noNode.leaf){
       document.getElementById("exploreNoNext").textContent=""
       document.getElementById("exploreNoLeaf").textContent=node.noNode.word||"(none)"
@@ -569,7 +571,7 @@ function renderExplore(){
   // Word list
   const header=document.getElementById("exploreWordsHeader")
   const grid=document.getElementById("exploreWordsGrid")
-  header.textContent=words.length+" remaining word"+(words.length!==1?"s":"")
+  header.textContent=pluralWords(words.length)+" remaining"
   grid.innerHTML=words.slice().sort().map(w=>`<span class="explore-word">${w}</span>`).join("")
 }
 
