@@ -69,6 +69,61 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:‘Caveat’,cursiv
 #helpOverlay .content{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:90%;max-width:420px;max-height:80vh;overflow:auto;color:#fff;font-family:‘Space Mono’,monospace;font-size:13px;line-height:1.6;background:rgba(0,0,0,.6);padding:18px;border-radius:14px}
 
 #helpOverlay button{position:absolute;top:16px;right:16px}
+
+/* ── Explore Panel ── */
+#explorePanel{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;overflow:hidden;z-index:600;padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+
+#exploreHeader{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;margin-bottom:10px}
+
+#exploreTitle{font-family:'Space Mono',monospace;font-size:14px;font-weight:700}
+
+#explorePath{font-family:'Space Mono',monospace;font-size:11px;color:#888;min-height:18px;overflow-x:auto;white-space:nowrap;flex-shrink:0;margin-bottom:8px;padding-bottom:2px}
+
+.path-item{display:inline-block;padding:1px 5px;border-radius:4px;background:#e6dfd3;margin:0 1px;font-weight:700}
+
+.path-item.yes{background:#c8eac8;color:#2a6b2a}
+
+.path-item.no{background:#f5c8c8;color:#8b1a1a}
+
+.path-sep{color:#bbb;margin:0 2px}
+
+#exploreQuestion{font-family:'Space Mono',monospace;font-size:20px;font-weight:700;text-align:center;padding:14px 8px;background:#fff;border:2px solid var(--faint);border-radius:12px;flex-shrink:0;margin-bottom:10px;letter-spacing:.04em}
+
+#exploreBranches{display:flex;gap:10px;flex-shrink:0;margin-bottom:10px}
+
+.explore-card{flex:1;background:#fff;border:2px solid var(--faint);border-radius:14px;padding:12px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:background .15s,border-color .15s;-webkit-tap-highlight-color:transparent;user-select:none}
+
+.explore-card:active{opacity:.75}
+
+.yes-card{border-color:#a0d8a0}
+
+.no-card{border-color:#e8a8a8}
+
+.card-label{font-family:'Space Mono',monospace;font-size:13px;font-weight:700}
+
+.yes-card .card-label{color:#2a6b2a}
+
+.no-card .card-label{color:#8b1a1a}
+
+.card-next{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:var(--ink)}
+
+.card-count{font-family:'Space Mono',monospace;font-size:11px;color:#888}
+
+.card-leaf{font-family:'Space Mono',monospace;font-size:12px;color:#555;text-align:center;word-break:break-all}
+
+#exploreWordList{flex:1;overflow-y:auto;background:#fff;border:1px solid var(--faint);border-radius:10px;padding:8px 10px}
+
+.explore-words-header{font-family:'Space Mono',monospace;font-size:11px;color:#888;margin-bottom:6px}
+
+.explore-words-grid{display:flex;flex-wrap:wrap;gap:4px}
+
+.explore-word{font-family:'Space Mono',monospace;font-size:11px;background:#f0ece3;border-radius:4px;padding:2px 6px;color:var(--ink)}
+
+#exploreLeafCard{background:#fff;border:2px solid #a0d8a0;border-radius:14px;padding:18px;text-align:center;flex-shrink:0;margin-bottom:10px;display:none}
+
+#exploreLeafCard .leaf-label{font-family:'Space Mono',monospace;font-size:11px;color:#888;margin-bottom:4px}
+
+#exploreLeafCard .leaf-word{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--ink);letter-spacing:.06em}
 </style>
 
 </head>
@@ -83,6 +138,7 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:‘Caveat’,cursiv
       <button class="tool-btn" id="btnClear">Clear</button>
       <button class="tool-btn" id="btnHangman">Hangman</button>
       <button class="tool-btn" id="btnSolve">Solve</button>
+      <button class="tool-btn" id="btnExplore" style="display:none">Explore</button>
     </div>
     <div id="peek"></div>
     <div id="perfDot">.</div>
@@ -91,7 +147,7 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:‘Caveat’,cursiv
 
 <div id="settingsPanel">
   <div id="settingsHeader">
-    <div><h1>Settings</h1><div style="font-family:'Space Mono',monospace;font-size:10px;color:#999;margin-top:2px">V1.1.6 · Apr 3, 2026 5:54 PM MDT</div></div>
+    <div><h1>Settings</h1><div style="font-family:'Space Mono',monospace;font-size:10px;color:#999;margin-top:2px">V1.2.0 · Apr 10, 2026</div></div>
     <button id="closeSettings">Close</button>
   </div>
   <div class="section">
@@ -117,6 +173,14 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:‘Caveat’,cursiv
   <div class="section">
     <h2>Decision Depth</h2>
     <div id="depthStats"></div>
+  </div>
+  <div class="section">
+    <h2>Explore Mode</h2>
+    <label style="font-family:'Space Mono',monospace;font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer">
+      <input type="checkbox" id="exploreModeToggle" style="width:16px;height:16px;cursor:pointer">
+      Enable Explore List Mode
+    </label>
+    <div style="font-family:'Space Mono',monospace;font-size:10px;color:#999;margin-top:6px">Adds an Explore button to the toolbar for visual tree navigation.</div>
   </div>
 </div>
 
@@ -333,6 +397,8 @@ function closeSettings(){document.getElementById("settingsPanel").style.display=
 document.getElementById("closeSettings").onclick=closeSettings
 
 function refreshSettings(){
+  // Sync explore mode toggle
+  document.getElementById("exploreModeToggle").checked=isExploreModeEnabled()
   const sel=document.getElementById("listSelect")
   sel.innerHTML=""
   for(const k in lists){const o=document.createElement("option");o.value=k;o.textContent=k;sel.appendChild(o)}
@@ -416,7 +482,166 @@ createListBtn.onclick=()=>{
   document.getElementById("newListWords").value=""
   refreshSettings()
 }
+
+// ── Explore List Mode ──────────────────────────────────────────────
+
+let exploreHistory=[]
+let exploreNode=null
+let exploreWords=[]
+
+function isExploreModeEnabled(){return localStorage.getItem("exploreMode")==="1"}
+
+function syncExploreButton(){
+  document.getElementById("btnExplore").style.display=isExploreModeEnabled()?"":"none"
+}
+
+const exploreModeToggle=document.getElementById("exploreModeToggle")
+exploreModeToggle.checked=isExploreModeEnabled()
+exploreModeToggle.addEventListener("change",()=>{
+  localStorage.setItem("exploreMode",exploreModeToggle.checked?"1":"0")
+  syncExploreButton()
+})
+syncExploreButton()
+
+function openExplore(){
+  exploreHistory=[]
+  exploreNode=root
+  exploreWords=getWords().slice()
+  renderExplore()
+  document.getElementById("explorePanel").style.display="flex"
+}
+
+function closeExplore(){
+  document.getElementById("explorePanel").style.display="none"
+}
+
+function renderExplore(){
+  const node=exploreNode
+  const words=exploreWords
+
+  // Breadcrumb path
+  const pathEl=document.getElementById("explorePath")
+  if(exploreHistory.length===0){
+    pathEl.textContent=""
+  } else {
+    pathEl.innerHTML=exploreHistory.map(h=>`<span class="path-item ${h.yes?'yes':'no'}">${h.ch}${h.yes?'✓':'✗'}</span>`).join('<span class="path-sep">→</span>')
+  }
+
+  const questionEl=document.getElementById("exploreQuestion")
+  const branchesEl=document.getElementById("exploreBranches")
+  const leafCard=document.getElementById("exploreLeafCard")
+
+  if(node.leaf){
+    questionEl.style.display="none"
+    branchesEl.style.display="none"
+    leafCard.style.display="block"
+    document.getElementById("exploreLeafWord").textContent=node.word||"(none)"
+  } else {
+    leafCard.style.display="none"
+    questionEl.style.display="block"
+    questionEl.textContent='Contains “'+node.ch+'”?'
+    branchesEl.style.display="flex"
+
+    const yesWords=words.filter(w=>w.includes(node.ch))
+    const noWords=words.filter(w=>!w.includes(node.ch))
+
+    // YES card
+    document.getElementById("exploreYesCount").textContent=yesWords.length+" word"+(yesWords.length!==1?"s":"")
+    if(node.yesNode.leaf){
+      document.getElementById("exploreYesNext").textContent=""
+      document.getElementById("exploreYesLeaf").textContent=node.yesNode.word||"(none)"
+    } else {
+      document.getElementById("exploreYesNext").textContent="→ "+node.yesNode.ch+"?"
+      document.getElementById("exploreYesLeaf").textContent=""
+    }
+
+    // NO card
+    document.getElementById("exploreNoCount").textContent=noWords.length+" word"+(noWords.length!==1?"s":"")
+    if(node.noNode.leaf){
+      document.getElementById("exploreNoNext").textContent=""
+      document.getElementById("exploreNoLeaf").textContent=node.noNode.word||"(none)"
+    } else {
+      document.getElementById("exploreNoNext").textContent="→ "+node.noNode.ch+"?"
+      document.getElementById("exploreNoLeaf").textContent=""
+    }
+  }
+
+  // Word list
+  const header=document.getElementById("exploreWordsHeader")
+  const grid=document.getElementById("exploreWordsGrid")
+  header.textContent=words.length+" remaining word"+(words.length!==1?"s":"")
+  grid.innerHTML=words.slice().sort().map(w=>`<span class="explore-word">${w}</span>`).join("")
+}
+
+document.getElementById("btnExplore").onclick=openExplore
+document.getElementById("exploreClose").onclick=closeExplore
+
+document.getElementById("exploreBack").onclick=()=>{
+  if(exploreHistory.length===0){closeExplore();return}
+  exploreHistory.pop()
+  // Replay from root
+  exploreNode=root
+  exploreWords=getWords().slice()
+  for(const h of exploreHistory){
+    if(h.yes){
+      exploreWords=exploreWords.filter(w=>w.includes(exploreNode.ch))
+      exploreNode=exploreNode.yesNode
+    } else {
+      exploreWords=exploreWords.filter(w=>!w.includes(exploreNode.ch))
+      exploreNode=exploreNode.noNode
+    }
+  }
+  renderExplore()
+}
+
+document.getElementById("exploreYesCard").onclick=()=>{
+  if(!exploreNode||exploreNode.leaf)return
+  exploreHistory.push({ch:exploreNode.ch,yes:true})
+  exploreWords=exploreWords.filter(w=>w.includes(exploreNode.ch))
+  exploreNode=exploreNode.yesNode
+  renderExplore()
+}
+
+document.getElementById("exploreNoCard").onclick=()=>{
+  if(!exploreNode||exploreNode.leaf)return
+  exploreHistory.push({ch:exploreNode.ch,yes:false})
+  exploreWords=exploreWords.filter(w=>!w.includes(exploreNode.ch))
+  exploreNode=exploreNode.noNode
+  renderExplore()
+}
 </script>
+
+<div id="explorePanel">
+  <div id="exploreHeader">
+    <button class="tool-btn" id="exploreBack">← Back</button>
+    <div id="exploreTitle">Explore List</div>
+    <button class="tool-btn" id="exploreClose">Close</button>
+  </div>
+  <div id="explorePath"></div>
+  <div id="exploreQuestion"></div>
+  <div id="exploreLeafCard">
+    <div class="leaf-label">WORD</div>
+    <div class="leaf-word" id="exploreLeafWord"></div>
+  </div>
+  <div id="exploreBranches">
+    <div class="explore-card yes-card" id="exploreYesCard">
+      <div class="card-label">YES</div>
+      <div class="card-next" id="exploreYesNext"></div>
+      <div class="card-count" id="exploreYesCount"></div>
+      <div class="card-leaf" id="exploreYesLeaf"></div>
+    </div>
+    <div class="explore-card no-card" id="exploreNoCard">
+      <div class="card-label">NO</div>
+      <div class="card-next" id="exploreNoNext"></div>
+      <div class="card-count" id="exploreNoCount"></div>
+      <div class="card-leaf" id="exploreNoLeaf"></div>
+    </div>
+  </div>
+  <div id="exploreWordList">
+    <div class="explore-words-header" id="exploreWordsHeader"></div>
+    <div class="explore-words-grid" id="exploreWordsGrid"></div>
+  </div>
+</div>
 
 <div id="helpOverlay">
   <div class="content">
