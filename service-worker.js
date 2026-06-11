@@ -1,7 +1,9 @@
-const CACHE_NAME = 'magic-wallpaper-v3';
+const CACHE_NAME = 'magic-wallpaper-v4';
 const urlsToCache = [
   './',
   './index.html',
+  './hangman.html',
+  './hangman-manifest.json',
   './styles.css',
   './app.js',
   './manifest.json'
