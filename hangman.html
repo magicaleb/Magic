@@ -3,50 +3,71 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#e9e3d7">
+<link rel="manifest" href="hangman-manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Hangman</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap');
 
-:root{–bg:#f4efe6;–paper:#f8f4ec;–ink:#1a1814;–faint:#cfc6b6;–toolbar:#ece6dc}
+:root{--bg:#f4efe6;--paper:#f8f4ec;--ink:#1a1814;--faint:#cfc6b6;--toolbar:#ece6dc;--viewport-width:100vw;--viewport-height:100vh;--viewport-height:100dvh;--toolbar-height:56px}
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
 
-html,body{height:100%;width:100%;overflow:hidden;font-family:‘Caveat’,cursive;background:#ddd}
+html,body{height:100%;height:var(--viewport-height);width:100%;overflow:hidden;overscroll-behavior:none;font-family:'Caveat',cursive;background:#ddd}
 
-#frame{position:fixed;inset:0;background:#e9e3d7}
+body{position:fixed;inset:0}
 
-#app{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));bottom:20px;left:max(10px,env(safe-area-inset-left));display:flex;flex-direction:column;background:var(–bg);border-radius:10px;border:2px solid rgba(0,0,0,.35);box-shadow:0 4px 12px rgba(0,0,0,.12);overflow:hidden}
+#frame{position:fixed;top:0;left:0;width:var(--viewport-width);height:var(--viewport-height);padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));background:#e9e3d7;display:flex;flex-direction:column}
 
-#drawCanvas{flex:1;width:100%;display:block;cursor:crosshair;touch-action:none;background:linear-gradient(var(–paper),var(–paper))}
+#app{position:relative;width:100%;flex:1;min-height:0;display:flex;flex-direction:column;background:var(--bg);border-radius:10px;border:2px solid rgba(0,0,0,.35);box-shadow:0 4px 12px rgba(0,0,0,.12);overflow:hidden}
 
-#toolbar{background:linear-gradient(var(–toolbar),#e6dfd3);border-top:1px solid var(–faint);display:flex;align-items:center;justify-content:space-around;padding:10px 8px max(10px,env(safe-area-inset-bottom)) 8px;flex-shrink:0}
+#drawCanvas{flex:1;min-height:0;width:100%;display:block;cursor:crosshair;touch-action:none;background:linear-gradient(var(--paper),var(--paper))}
 
-.tool-btn{font-family:‘Space Mono’,monospace;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#f7f2e8;border:1px solid var(–faint);border-radius:10px;padding:7px 13px;color:#6f6a61;cursor:pointer}
+#toolbar{min-height:56px;background:linear-gradient(var(--toolbar),#e6dfd3);border-top:1px solid var(--faint);display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;padding:6px;flex-shrink:0}
 
-.tool-btn.active{background:var(–ink);color:#1a1814;border-color:var(–ink)}
+.tool-btn{font-family:'Space Mono',monospace;font-size:clamp(8px,2.45vw,10px);font-weight:700;line-height:1;letter-spacing:0;text-transform:uppercase;background:#f7f2e8;border:1px solid var(--faint);border-radius:8px;padding:6px 2px;min-height:44px;width:100%;min-width:0;color:#5f5a52;cursor:pointer;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-#peek{position:absolute;bottom:0;right:2px;font-family:‘Space Mono’,monospace;font-size:10px;font-weight:700;letter-spacing:.04em;opacity:0;pointer-events:none;color:#666}
+#toolbar.explore-enabled{grid-template-columns:repeat(4,minmax(0,1fr))}
+
+.tool-btn.active{background:var(--ink);color:#fff8ee;border-color:var(--ink)}
+
+#peek{position:absolute;bottom:calc(var(--toolbar-height) + 2px);right:4px;max-width:80%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.04em;opacity:0;pointer-events:none;color:#666}
 
 #peek.show{opacity:1}
 
-#perfDot{position:absolute;bottom:2px;left:8px;font-family:‘Space Mono’,monospace;font-size:14px;color:#666;opacity:0}
+#perfDot{position:absolute;bottom:calc(var(--toolbar-height) + 2px);left:8px;font-family:'Space Mono',monospace;font-size:14px;color:#666;opacity:0}
 
 #perfDot.show{opacity:.9}
 
-#settingsPanel{position:fixed;inset:0;background:#f4efe6;display:none;flex-direction:column;overflow:auto;padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));z-index:500}
+#settingsPanel{position:fixed;top:0;left:0;width:var(--viewport-width);height:var(--viewport-height);background:#f4efe6;display:none;flex-direction:column;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));z-index:500}
 
-#settingsHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+#settingsHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;position:sticky;top:0;z-index:2;background:#f4efe6;padding-bottom:10px}
 
-#settingsHeader h1{font-family:‘Space Mono’,monospace;font-size:16px}
+#settingsHeader h1{font-family:'Space Mono',monospace;font-size:16px}
 
-#closeSettings{font-family:‘Space Mono’,monospace;font-size:12px;padding:6px 10px}
+#closeSettings{font-family:'Space Mono',monospace;font-size:12px;padding:6px 10px}
 
 .section{margin-bottom:28px}
 
-.section h2{font-family:‘Space Mono’,monospace;font-size:14px;margin-bottom:8px}
+.section h2{font-family:'Space Mono',monospace;font-size:14px;margin-bottom:8px}
+
+.section-copy{font-family:'Space Mono',monospace;font-size:11px;line-height:1.5;color:#6f6a61;margin-bottom:10px}
+
+.settings-action{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:8px;min-height:44px;padding:8px 12px;margin-top:10px;width:100%}
+
+.setting-toggle{font-family:'Space Mono',monospace;font-size:11px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;background:#fff;border:1px solid var(--faint);border-radius:8px;padding:10px}
+
+.setting-toggle input{width:18px;height:18px;flex:0 0 auto;margin-top:1px}
+
+.setting-toggle strong,.setting-toggle small{display:block}
+
+.setting-toggle small{font-size:10px;font-weight:400;color:#888;margin-top:3px;line-height:1.4}
+
+#treeSummary{font-family:'Space Mono',monospace;font-size:11px;line-height:1.5;background:#fff;border:1px solid var(--faint);border-radius:8px;padding:10px;margin-bottom:10px}
 
 #wordView{font-family:monospace;font-size:12px;background:white;border:1px solid #ccc;padding:8px;max-height:200px;overflow:auto}
 
@@ -54,30 +75,40 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:‘Caveat’,cursiv
 
 #firstLetter{font-family:monospace;font-size:12px;margin-top:6px;background:white;border:1px solid #ccc;padding:6px;display:inline-block}
 
+#listSelect{width:100%;min-height:44px;padding:6px;font-family:monospace;background:#fff}
+
+#useList,#createListBtn{min-height:40px;padding:6px 10px;margin-top:6px}
+
 #addWordInput{width:100%;padding:6px;margin-top:6px;font-family:monospace}
 
 #newListName{width:100%;padding:6px;margin-top:6px;font-family:monospace}
 
 #newListWords{width:100%;height:140px;padding:6px;margin-top:6px;font-family:monospace}
 
-#helpOverlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;z-index:999}
+#helpOverlay{position:fixed;top:0;left:0;width:var(--viewport-width);height:var(--viewport-height);background:rgba(0,0,0,.8);display:none;z-index:999}
 
 #helpOverlay .line{position:absolute;left:0;right:0;border-top:2px dashed #fff}
 
 #helpOverlay .box{position:absolute;border:2px solid red;border-radius:8px}
 
-#helpOverlay .content{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:90%;max-width:420px;max-height:80vh;overflow:auto;color:#fff;font-family:‘Space Mono’,monospace;font-size:13px;line-height:1.6;background:rgba(0,0,0,.6);padding:18px;border-radius:14px}
+#helpOverlay .content{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:90%;max-width:420px;max-height:80vh;overflow:auto;color:#fff;font-family:'Space Mono',monospace;font-size:13px;line-height:1.6;background:rgba(0,0,0,.6);padding:18px;border-radius:14px}
 
 #helpOverlay button{position:absolute;top:16px;right:16px}
 
 /* ── Explore Panel ── */
-#explorePanel{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;overflow:hidden;z-index:600;padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+#explorePanel{position:fixed;top:0;left:0;width:var(--viewport-width);height:var(--viewport-height);background:var(--bg);display:none;flex-direction:column;overflow:hidden;touch-action:auto;z-index:600;padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
 
-#exploreHeader{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;margin-bottom:10px}
+#exploreHeader{display:grid;grid-template-columns:minmax(74px,1fr) minmax(120px,2fr) minmax(74px,1fr);align-items:center;gap:8px;flex-shrink:0;margin-bottom:8px}
 
-#exploreTitle{font-family:'Space Mono',monospace;font-size:14px;font-weight:700}
+#exploreTitle{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;text-align:center}
 
-#explorePath{font-family:'Space Mono',monospace;font-size:11px;color:#888;min-height:18px;overflow-x:auto;white-space:nowrap;flex-shrink:0;margin-bottom:8px;padding-bottom:2px}
+.panel-btn{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;background:#fff;border:1px solid var(--faint);border-radius:8px;min-height:40px;padding:6px 8px;color:var(--ink)}
+
+#exploreStatus{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;text-align:center;color:#555;flex-shrink:0}
+
+#exploreHint{font-family:'Space Mono',monospace;font-size:10px;line-height:1.4;text-align:center;color:#888;flex-shrink:0;margin:3px 0 8px}
+
+#explorePath{font-family:'Space Mono',monospace;font-size:11px;color:#888;min-height:18px;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x;white-space:nowrap;flex-shrink:0;margin-bottom:8px;padding-bottom:2px}
 
 .path-item{display:inline-block;padding:1px 5px;border-radius:4px;background:#e6dfd3;margin:0 1px;font-weight:700}
 
@@ -87,11 +118,11 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:‘Caveat’,cursiv
 
 .path-sep{color:#bbb;margin:0 2px}
 
-#exploreQuestion{font-family:'Space Mono',monospace;font-size:20px;font-weight:700;text-align:center;padding:14px 8px;background:#fff;border:2px solid var(--faint);border-radius:12px;flex-shrink:0;margin-bottom:10px;letter-spacing:.04em}
+#exploreQuestion{font-family:'Space Mono',monospace;font-size:clamp(16px,5vw,20px);font-weight:700;text-align:center;padding:14px 8px;background:#fff;border:2px solid var(--faint);border-radius:12px;flex-shrink:0;margin-bottom:10px;letter-spacing:.01em}
 
 #exploreBranches{display:flex;gap:10px;flex-shrink:0;margin-bottom:10px}
 
-.explore-card{flex:1;background:#fff;border:2px solid var(--faint);border-radius:14px;padding:12px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:background .15s,border-color .15s;-webkit-tap-highlight-color:transparent;user-select:none}
+.explore-card{font:inherit;color:inherit;flex:1;min-width:0;min-height:118px;background:#fff;border:2px solid var(--faint);border-radius:14px;padding:12px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;transition:background .15s,border-color .15s;-webkit-tap-highlight-color:transparent;user-select:none}
 
 .explore-card:active{opacity:.75}
 
@@ -109,9 +140,11 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:‘Caveat’,cursiv
 
 .card-count{font-family:'Space Mono',monospace;font-size:11px;color:#888}
 
+.card-rule{font-family:'Space Mono',monospace;font-size:10px;color:#777;text-align:center;min-height:14px}
+
 .card-leaf{font-family:'Space Mono',monospace;font-size:12px;color:#555;text-align:center;word-break:break-all}
 
-#exploreWordList{flex:1;overflow-y:auto;background:#fff;border:1px solid var(--faint);border-radius:10px;padding:8px 10px}
+#exploreWordList{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:#fff;border:1px solid var(--faint);border-radius:10px;padding:8px 10px}
 
 .explore-words-header{font-family:'Space Mono',monospace;font-size:11px;color:#888;margin-bottom:6px}
 
@@ -124,6 +157,20 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:‘Caveat’,cursiv
 #exploreLeafCard .leaf-label{font-family:'Space Mono',monospace;font-size:11px;color:#888;margin-bottom:4px}
 
 #exploreLeafCard .leaf-word{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--ink);letter-spacing:.06em}
+
+#exploreLeafDetail{font-family:'Space Mono',monospace;font-size:11px;color:#777;line-height:1.5;margin-top:6px}
+
+#exploreRestart{margin-top:12px}
+
+@media (max-width:350px){
+  #toolbar:not(.explore-enabled){grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+@media (orientation:landscape){
+  #toolbar.explore-enabled{grid-template-columns:repeat(7,minmax(0,1fr))}
+  #exploreQuestion{padding:9px 8px}
+  .explore-card{min-height:88px;padding:8px}
+}
 </style>
 
 </head>
@@ -147,14 +194,27 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:‘Caveat’,cursiv
 
 <div id="settingsPanel">
   <div id="settingsHeader">
-    <div><h1>Settings</h1><div style="font-family:'Space Mono',monospace;font-size:10px;color:#999;margin-top:2px">V1.2.0 · Apr 10, 2026</div></div>
+    <div><h1>Settings</h1><div style="font-family:'Space Mono',monospace;font-size:10px;color:#999;margin-top:2px">V1.3.0 · Jun 11, 2026</div></div>
     <button id="closeSettings">Close</button>
   </div>
   <div class="section">
     <h2>Active Word List</h2>
-    <select id="listSelect"></select>
+    <select id="listSelect" aria-label="Word list"></select>
     <button id="useList">Use Selected</button>
     <div id="firstLetter"></div>
+  </div>
+  <div class="section">
+    <h2>Decision Tree Explorer</h2>
+    <p class="section-copy">Practice the same path the trick uses. At each step, answer whether the chosen word contains the shown letter.</p>
+    <div id="treeSummary"></div>
+    <label class="setting-toggle">
+      <input type="checkbox" id="exploreModeToggle">
+      <span>
+        <strong>Show Explore in the bottom menu</strong>
+        <small>Keep it off during a performance, or turn it on while learning the list.</small>
+      </span>
+    </label>
+    <button class="settings-action" id="openExploreSettings">Open Tree Explorer</button>
   </div>
   <div class="section">
     <h2>Create New List</h2>
@@ -174,13 +234,43 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:‘Caveat’,cursiv
     <h2>Decision Depth</h2>
     <div id="depthStats"></div>
   </div>
-  <div class="section">
-    <h2>Explore Mode</h2>
-    <label style="font-family:'Space Mono',monospace;font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer">
-      <input type="checkbox" id="exploreModeToggle" style="width:16px;height:16px;cursor:pointer">
-      Enable Explore List Mode
-    </label>
-    <div style="font-family:'Space Mono',monospace;font-size:10px;color:#999;margin-top:6px">Adds an Explore button to the toolbar for visual tree navigation.</div>
+</div>
+
+<div id="explorePanel">
+  <div id="exploreHeader">
+    <button class="panel-btn" id="exploreBack">Done</button>
+    <div id="exploreTitle">Tree Explorer</div>
+    <button class="panel-btn" id="exploreClose">Close</button>
+  </div>
+  <div id="exploreStatus"></div>
+  <div id="exploreHint">Choose the answer for the spectator's word.</div>
+  <div id="explorePath"></div>
+  <div id="exploreQuestion"></div>
+  <div id="exploreLeafCard">
+    <div class="leaf-label" id="exploreLeafLabel">MATCH</div>
+    <div class="leaf-word" id="exploreLeafWord"></div>
+    <div id="exploreLeafDetail"></div>
+    <button class="panel-btn" id="exploreRestart">Start Over</button>
+  </div>
+  <div id="exploreBranches">
+    <button type="button" class="explore-card yes-card" id="exploreYesCard">
+      <div class="card-label">YES</div>
+      <div class="card-rule" id="exploreYesRule"></div>
+      <div class="card-next" id="exploreYesNext"></div>
+      <div class="card-count" id="exploreYesCount"></div>
+      <div class="card-leaf" id="exploreYesLeaf"></div>
+    </button>
+    <button type="button" class="explore-card no-card" id="exploreNoCard">
+      <div class="card-label">NO</div>
+      <div class="card-rule" id="exploreNoRule"></div>
+      <div class="card-next" id="exploreNoNext"></div>
+      <div class="card-count" id="exploreNoCount"></div>
+      <div class="card-leaf" id="exploreNoLeaf"></div>
+    </button>
+  </div>
+  <div id="exploreWordList">
+    <div class="explore-words-header" id="exploreWordsHeader"></div>
+    <div class="explore-words-grid" id="exploreWordsGrid"></div>
   </div>
 </div>
 
@@ -188,13 +278,22 @@ html,body{height:100%;width:100%;overflow:hidden;font-family:‘Caveat’,cursiv
 const DEFAULT_LIST=["AIRFRESHENER","AIRPODS","BACKPACK","BASKET","BATHTUB","BATTERY","BED","BENCH","BLANKET","BLENDER","BOOK","BOOKEND","BOTTLE","BOWL","BRACELET","BROOM","BRUSH","BUCKET","CABINET","CALENDAR","CAMERA","CANDLE","CARDS","CARPET","CHAIR","CHARGER","CLOCK","COASTER","COMB","COMPUTER","COUCH","DESK","DOORKNOB","DRAWER","DRESSER","DUSTPAN","ENVELOPE","FRIDGE","GLASS","GLASSES","GLUE","GRATER","GUITAR","HAIRBRUSH","HAIRDRYER","HAIRTIE","HAMMER","HANGER","HEADPHONES","HEATER","HIGHLIGHTER","IRON","KETTLE","KEYBOARD","KEYS","KNIFE","LADLE","LAMP","LIGHTBULB","LIGHTER","LIPBALM","LOTION","MAGAZINE","MARKER","MATCHES","MATTRESS","MIRROR","MOP","MOUSE","MUG","NAILCLIPPERS","NAPKIN","NECKLACE","NOTEBOOK","PAN","PANTRY","PEELER","PEN","PENCIL","PERFUME","PHONE","PICTURE","PILLOW","PLANT","PLATE","PLUNGER","PRINTER","RAZOR","REMOTE","RING","ROPE","SCALE","SCISSORS","SCREWDRIVER","SHAMPOO","SHARPIE","SINK","SOAP","SPEAKER","SPATULA","SPONGE","SPOON","TABLE","TELEVISION","TISSUES","TOASTER","TOILET","TOILETPAPER","TOOLBOX","TOOTHBRUSH","TOOTHPASTE","TOWEL","TRASHCAN","TUPPERWARE","TWEEZERS","UMBRELLA","VACUUM","WALLET","WASHCLOTH","WHISK","WRENCH"]
 const CAR_BRANDS=["TOYOTA","HONDA","FORD","CHEVROLET","NISSAN","BMW","MERCEDES","AUDI","VOLKSWAGEN","HYUNDAI","KIA","SUBARU","MAZDA","TESLA","LEXUS","ACURA","INFINITI","VOLVO","JAGUAR","LANDROVER","PORSCHE","FERRARI","LAMBORGHINI","MASERATI","ALFAROMEO","FIAT","PEUGEOT","RENAULT","CITROEN","SKODA","SEAT","MINI","BENTLEY","ROLLSROYCE","ASTONMARTIN","BUGATTI","MCLAREN","GENESIS","RAM","DODGE","JEEP","CADILLAC","LINCOLN","BUICK","CHRYSLER","MITSUBISHI","SUZUKI","DAIHATSU","GEELY","TATA"]
 
-let lists=JSON.parse(localStorage.getItem("hangmanLists")||"{}")
-if(!lists.default)lists.default=DEFAULT_LIST
-if(!lists.cars)lists.cars=CAR_BRANDS
+function normalizeWords(words){
+  if(!Array.isArray(words))return[]
+  return Array.from(new Set(words.map(w=>String(w).trim().toUpperCase()).filter(Boolean)))
+}
+
+let lists={}
+try{lists=JSON.parse(localStorage.getItem("hangmanLists")||"{}")}catch(e){lists={}}
+if(!lists||typeof lists!=="object"||Array.isArray(lists))lists={}
+for(const name of Object.keys(lists))lists[name]=normalizeWords(lists[name])
+if(!Array.isArray(lists.default)||lists.default.length===0)lists.default=DEFAULT_LIST.slice()
+if(!Array.isArray(lists.cars)||lists.cars.length===0)lists.cars=CAR_BRANDS.slice()
 
 let currentListName=localStorage.getItem("hangmanActiveList")||"default"
+if(!lists[currentListName])currentListName="default"
 
-function getWords(){return lists[currentListName]}
+function getWords(){return lists[currentListName]||[]}
 
 const hasL=(w,ch)=>w.includes(ch)
 
@@ -211,16 +310,21 @@ function bestSplit(c){
   return null
 }
 
+function makeLeaf(c){
+  const words=c.slice().sort()
+  return{leaf:true,word:words.length===1?words[0]:null,words}
+}
+
 function buildTree(c){
-  if(c.length<=1)return{leaf:true,word:c[0]||null}
+  if(c.length<=1)return makeLeaf(c)
   const s=bestSplit(c)
-  if(!s)return{leaf:true,word:c[0]}
+  if(!s)return makeLeaf(c)
   return{leaf:false,ch:s.ch,yesNode:buildTree(s.yes),noNode:buildTree(s.no)}
 }
 
 function buildRootFromList(words){
   const split=bestSplit(words)
-  if(!split)return{leaf:true,word:words[0]}
+  if(!split)return makeLeaf(words)
   return{leaf:false,ch:split.ch,yesNode:buildTree(split.yes),noNode:buildTree(split.no)}
 }
 
@@ -236,6 +340,13 @@ const btnHangman=document.getElementById("btnHangman")
 const btnClear=document.getElementById("btnClear")
 const btnUndo=document.getElementById("btnUndo")
 const btnSolve=document.getElementById("btnSolve")
+const btnDraw=document.getElementById("btnDraw")
+const btnErase=document.getElementById("btnErase")
+const toolbar=document.getElementById("toolbar")
+const listSelect=document.getElementById("listSelect")
+const useList=document.getElementById("useList")
+const addWordInput=document.getElementById("addWordInput")
+const createListBtn=document.getElementById("createListBtn")
 
 let DPR=window.devicePixelRatio||1
 let strokes=[]
@@ -245,9 +356,32 @@ let perfMode=false
 let scaffold=false
 let advanceTimer=null
 let strokeGroupStartY=null
+let toolMode="draw"
+let resizeFrame=null
 const ADVANCE_DELAY=450
 
-function resizeCanvas(){const r=canvas.getBoundingClientRect();canvas.width=r.width*DPR;canvas.height=r.height*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);redraw()}
+function resizeCanvas(){
+  const r=canvas.getBoundingClientRect()
+  if(r.width<1||r.height<1)return
+  DPR=window.devicePixelRatio||1
+  canvas.width=Math.round(r.width*DPR)
+  canvas.height=Math.round(r.height*DPR)
+  ctx.setTransform(DPR,0,0,DPR,0,0)
+  redraw()
+}
+
+function syncViewport(){
+  const viewport=window.visualViewport
+  const width=Math.round(viewport?viewport.width:window.innerWidth)
+  const height=Math.round(viewport?viewport.height:window.innerHeight)
+  document.documentElement.style.setProperty("--viewport-width",width+"px")
+  document.documentElement.style.setProperty("--viewport-height",height+"px")
+  if(resizeFrame)cancelAnimationFrame(resizeFrame)
+  resizeFrame=requestAnimationFrame(()=>{
+    document.documentElement.style.setProperty("--toolbar-height",toolbar.getBoundingClientRect().height+"px")
+    resizeCanvas()
+  })
+}
 
 function drawScaffold(){
   if(!scaffold)return
@@ -303,11 +437,23 @@ function hidePeek(){
   btnSolve.textContent="Solve"
 }
 
+function getLeafAnswer(node){
+  if(!node||!node.leaf)return""
+  if(node.word)return node.word
+  return node.words&&node.words.length?node.words.join("/"):"?"
+}
+
 function advanceTree(isYes){if(!curNode||curNode.leaf)return;treeHistory.push(curNode);curNode=isYes?curNode.yesNode:curNode.noNode}
 
-function newSession(){strokes=[];treeHistory=[];root=buildRoot();curNode=root;perfMode=true;scaffold=true;perfDot.classList.add("show");redraw()}
+function cancelPendingAdvance(){
+  clearTimeout(advanceTimer)
+  advanceTimer=null
+  strokeGroupStartY=null
+}
 
-function clearAll(){strokes=[];treeHistory=[];perfMode=false;scaffold=false;perfDot.classList.remove("show");redraw()}
+function newSession(){cancelPendingAdvance();strokes=[];treeHistory=[];root=buildRoot();curNode=root;perfMode=true;scaffold=true;perfDot.classList.add("show");redraw()}
+
+function clearAll(){cancelPendingAdvance();strokes=[];treeHistory=[];perfMode=false;scaffold=false;perfDot.classList.remove("show");redraw()}
 
 function getPos(e){const r=canvas.getBoundingClientRect();const src=e.touches?e.touches[0]:e;return[src.clientX-r.left,src.clientY-r.top]}
 
@@ -318,6 +464,7 @@ function scheduleAdvance(){
   advanceTimer=setTimeout(()=>{
     if(perfMode&&strokeGroupStartY!==null&&!curNode.leaf){advanceTree(isYesZone(strokeGroupStartY))}
     strokeGroupStartY=null
+    advanceTimer=null
   },ADVANCE_DELAY)
 }
 
@@ -325,14 +472,19 @@ function onStart(e){
   e.preventDefault()
   clearTimeout(advanceTimer)
   const[x,y]=getPos(e)
+  if(toolMode==="erase"){
+    eraseAt(x,y)
+    isDrawing=false
+    return
+  }
   if(strokeGroupStartY===null)strokeGroupStartY=y
   isDrawing=true
   if(perfMode){
-    if(curNode.leaf)showPeek(curNode.word)
+    if(curNode.leaf)showPeek(getLeafAnswer(curNode))
     else{
       const nextNode=isYesZone(strokeGroupStartY)?curNode.yesNode:curNode.noNode
       if(nextNode){
-        if(nextNode.leaf)showPeek(nextNode.word)
+        if(nextNode.leaf)showPeek(getLeafAnswer(nextNode))
         else showPeek(nextNode.ch)
       }
     }
@@ -344,6 +496,11 @@ function onStart(e){
 }
 
 function onMove(e){
+  if(toolMode==="erase"){
+    const[x,y]=getPos(e)
+    eraseAt(x,y)
+    return
+  }
   if(!isDrawing)return
   const[x,y]=getPos(e)
   currentStroke.points.push([x,y])
@@ -353,26 +510,58 @@ function onMove(e){
 
 function onEnd(){
   hidePeek()
+  if(toolMode==="erase")return
   if(!isDrawing)return
   isDrawing=false
   strokes.push(currentStroke)
   scheduleAdvance()
 }
 
+function eraseAt(x,y){
+  const radius=18
+  for(let i=strokes.length-1;i>=0;i--){
+    if(strokes[i].points.some(([px,py])=>Math.hypot(px-x,py-y)<=radius)){
+      strokes.splice(i,1)
+      redraw()
+      return
+    }
+  }
+}
+
+function setTool(mode){
+  toolMode=mode
+  btnDraw.classList.toggle("active",mode==="draw")
+  btnErase.classList.toggle("active",mode==="erase")
+  btnDraw.setAttribute("aria-pressed",mode==="draw"?"true":"false")
+  btnErase.setAttribute("aria-pressed",mode==="erase"?"true":"false")
+  canvas.style.cursor=mode==="erase"?"cell":"crosshair"
+}
+
 canvas.addEventListener("touchstart",onStart,{passive:false})
 canvas.addEventListener("touchmove",onMove,{passive:false})
 canvas.addEventListener("touchend",onEnd,{passive:false})
+canvas.addEventListener("touchcancel",onEnd,{passive:false})
 canvas.addEventListener("mousedown",onStart)
-canvas.addEventListener("mousemove",e=>{if(isDrawing)onMove(e)})
+canvas.addEventListener("mousemove",onMove)
 canvas.addEventListener("mouseup",onEnd)
-window.addEventListener("resize",resizeCanvas)
-resizeCanvas()
+canvas.addEventListener("mouseleave",onEnd)
+window.addEventListener("resize",syncViewport)
+window.addEventListener("orientationchange",syncViewport)
+if(window.visualViewport){
+  window.visualViewport.addEventListener("resize",syncViewport)
+  window.visualViewport.addEventListener("scroll",syncViewport)
+}
+syncViewport()
+setTool("draw")
 
+btnDraw.onclick=()=>setTool("draw")
+btnErase.onclick=()=>setTool("erase")
 btnHangman.onclick=newSession
 btnClear.onclick=clearAll
-btnUndo.onclick=()=>{strokes.pop();if(treeHistory.length)curNode=treeHistory.pop();redraw()}
+btnUndo.onclick=()=>{cancelPendingAdvance();strokes.pop();if(treeHistory.length)curNode=treeHistory.pop();redraw()}
 
 btnSolve.onclick=()=>{
+  cancelPendingAdvance()
   perfMode=false
   hidePeek()
   perfDot.classList.remove("show")
@@ -385,7 +574,8 @@ btnSolve.onclick=()=>{
 
 let lastTap=0
 canvas.addEventListener("pointerdown",e=>{
-  if(e.clientX>window.innerWidth*.75&&e.clientY<window.innerHeight*.25){
+  const r=canvas.getBoundingClientRect()
+  if(e.clientX>r.left+r.width*.75&&e.clientY<r.top+r.height*.25){
     const now=Date.now()
     if(now-lastTap<300)openSettings()
     lastTap=now
@@ -397,7 +587,6 @@ function closeSettings(){document.getElementById("settingsPanel").style.display=
 document.getElementById("closeSettings").onclick=closeSettings
 
 function refreshSettings(){
-  // Sync explore mode toggle
   document.getElementById("exploreModeToggle").checked=isExploreModeEnabled()
   const sel=document.getElementById("listSelect")
   sel.innerHTML=""
@@ -406,6 +595,7 @@ function refreshSettings(){
   renderWords()
   renderDepthStats()
   renderFirstLetter()
+  renderTreeSummary()
 }
 
 function renderWords(){
@@ -433,9 +623,44 @@ function renderWords(){
   })
 }
 
-function renderFirstLetter(){const letter=getFirstLetter(lists[currentListName]);document.getElementById("firstLetter").textContent="First Letter: "+letter}
+function renderFirstLetter(){
+  const letter=getFirstLetter(getWords())
+  document.getElementById("firstLetter").textContent=letter==="?"?"No first question available":"First question: contains "+letter+"?"
+}
 
-function depthCount(node,depth,counts){if(!node)return;if(node.leaf){counts[depth]=(counts[depth]||0)+1;return}depthCount(node.yesNode,depth+1,counts);depthCount(node.noNode,depth+1,counts)}
+function depthCount(node,depth,counts){
+  if(!node)return
+  if(node.leaf){
+    const total=node.words?node.words.length:(node.word?1:0)
+    counts[depth]=(counts[depth]||0)+total
+    return
+  }
+  depthCount(node.yesNode,depth+1,counts)
+  depthCount(node.noNode,depth+1,counts)
+}
+
+function getTreeStats(node,depth=0,stats={words:0,totalDepth:0,maxDepth:0,ambiguousGroups:0,ambiguousWords:0}){
+  if(!node)return stats
+  if(node.leaf){
+    const total=node.words?node.words.length:(node.word?1:0)
+    stats.words+=total
+    stats.totalDepth+=total*depth
+    stats.maxDepth=Math.max(stats.maxDepth,depth)
+    if(total>1){stats.ambiguousGroups++;stats.ambiguousWords+=total}
+    return stats
+  }
+  getTreeStats(node.yesNode,depth+1,stats)
+  getTreeStats(node.noNode,depth+1,stats)
+  return stats
+}
+
+function renderTreeSummary(){
+  const stats=getTreeStats(buildRoot())
+  const average=stats.words?(stats.totalDepth/stats.words).toFixed(1):"0"
+  let summary=pluralWords(stats.words)+" in “"+currentListName+"” · about "+average+" questions on average · "+stats.maxDepth+" maximum"
+  if(stats.ambiguousGroups)summary+=" · "+stats.ambiguousWords+" words share an indistinguishable letter pattern"
+  document.getElementById("treeSummary").textContent=summary
+}
 
 function renderDepthStats(){
   const counts={}
@@ -443,7 +668,8 @@ function renderDepthStats(){
   depthCount(r,0,counts)
   let html=""
   const depths=Object.keys(counts).sort((a,b)=>a-b)
-  for(const d of depths){html+="Depth "+d+": "+counts[d]+" words<br>"}
+  for(const d of depths){html+=d+" questions: "+pluralWords(counts[d])+"<br>"}
+  if(depths.length===0)html="Add at least one word to build a tree."
   document.getElementById("depthStats").innerHTML=html
 }
 
@@ -474,7 +700,7 @@ createListBtn.onclick=()=>{
   const name=document.getElementById("newListName").value.trim()
   const raw=document.getElementById("newListWords").value
   if(!name||!raw)return
-  const words=raw.split("\n").map(w=>w.trim().toUpperCase()).filter(w=>w.length>0)
+  const words=normalizeWords(raw.split("\n"))
   if(words.length===0)return
   lists[name]=Array.from(new Set(words))
   localStorage.setItem("hangmanLists",JSON.stringify(lists))
@@ -488,13 +714,17 @@ createListBtn.onclick=()=>{
 let exploreHistory=[]
 let exploreNode=null
 let exploreWords=[]
+let exploreReturnToSettings=false
 
 const EXPLORE_ON="1"
 function isExploreModeEnabled(){return localStorage.getItem("exploreMode")===EXPLORE_ON}
 
 function pluralWords(n){return n+" word"+(n!==1?"s":"")}
 function syncExploreButton(){
-  document.getElementById("btnExplore").style.display=isExploreModeEnabled()?"":"none"
+  const enabled=isExploreModeEnabled()
+  document.getElementById("btnExplore").style.display=enabled?"":"none"
+  document.getElementById("toolbar").classList.toggle("explore-enabled",enabled)
+  syncViewport()
 }
 
 const exploreModeToggle=document.getElementById("exploreModeToggle")
@@ -505,78 +735,123 @@ exploreModeToggle.addEventListener("change",()=>{
 })
 syncExploreButton()
 
-function openExplore(){
+function openExplore(returnToSettings=false){
+  exploreReturnToSettings=returnToSettings
   exploreHistory=[]
   exploreNode=root
   exploreWords=getWords().slice()
+  document.getElementById("settingsPanel").style.display="none"
   renderExplore()
   document.getElementById("explorePanel").style.display="flex"
 }
 
 function closeExplore(){
   document.getElementById("explorePanel").style.display="none"
+  if(exploreReturnToSettings){
+    exploreReturnToSettings=false
+    openSettings()
+  }
+}
+
+function resetExplore(){
+  exploreHistory=[]
+  exploreNode=root
+  exploreWords=getWords().slice()
+  renderExplore()
 }
 
 function renderExplore(){
   const node=exploreNode
   const words=exploreWords
 
-  // Breadcrumb path
   const pathEl=document.getElementById("explorePath")
-  if(exploreHistory.length===0){
-    pathEl.textContent=""
-  } else {
-    pathEl.innerHTML=exploreHistory.map(h=>`<span class="path-item ${h.yes?'yes':'no'}">${h.ch}${h.yes?'✓':'✗'}</span>`).join('<span class="path-sep">→</span>')
+  pathEl.replaceChildren()
+  exploreHistory.forEach((item,index)=>{
+    if(index){
+      const separator=document.createElement("span")
+      separator.className="path-sep"
+      separator.textContent="→"
+      pathEl.appendChild(separator)
+    }
+    const step=document.createElement("span")
+    step.className="path-item "+(item.yes?"yes":"no")
+    step.textContent=item.ch+(item.yes?"✓":"✗")
+    pathEl.appendChild(step)
+  })
+  if(exploreHistory.length){
+    requestAnimationFrame(()=>{pathEl.scrollLeft=pathEl.scrollWidth})
   }
 
   const questionEl=document.getElementById("exploreQuestion")
   const branchesEl=document.getElementById("exploreBranches")
   const leafCard=document.getElementById("exploreLeafCard")
+  const status=document.getElementById("exploreStatus")
+  const hint=document.getElementById("exploreHint")
+  const back=document.getElementById("exploreBack")
+
+  document.getElementById("exploreTitle").textContent="Tree Explorer"
+  status.textContent=currentListName+" · "+pluralWords(words.length)+" remaining"
+  back.textContent=exploreHistory.length?"Back":"Done"
 
   if(node.leaf){
     questionEl.style.display="none"
     branchesEl.style.display="none"
     leafCard.style.display="block"
-    document.getElementById("exploreLeafWord").textContent=node.word||"(none)"
+    const leafWords=node.words&&node.words.length?node.words:words
+    const hasOne=leafWords.length===1
+    document.getElementById("exploreLeafLabel").textContent=hasOne?"MATCH":leafWords.length?"POSSIBLE MATCHES":"NO MATCH"
+    document.getElementById("exploreLeafWord").textContent=hasOne?leafWords[0]:leafWords.length+" WORDS"
+    document.getElementById("exploreLeafDetail").textContent=hasOne?"The path has identified the word.":leafWords.length?"These words contain exactly the same set of letters, so Yes/No letter questions cannot separate them.":"This list does not contain a matching word."
+    hint.textContent=hasOne?"Finished in "+exploreHistory.length+" questions.":"The remaining word chips are the unresolved possibilities."
   } else {
     leafCard.style.display="none"
     questionEl.style.display="block"
-    questionEl.textContent='Contains “'+node.ch+'”?'
+    questionEl.textContent="Does the word contain "+node.ch+"?"
     branchesEl.style.display="flex"
+    hint.textContent="Choose the answer for the spectator's word."
 
     const yesWords=words.filter(w=>w.includes(node.ch))
     const noWords=words.filter(w=>!w.includes(node.ch))
 
-    // YES card
+    document.getElementById("exploreYesRule").textContent="Contains "+node.ch
     document.getElementById("exploreYesCount").textContent=pluralWords(yesWords.length)
     if(node.yesNode.leaf){
       document.getElementById("exploreYesNext").textContent=""
-      document.getElementById("exploreYesLeaf").textContent=node.yesNode.word||"(none)"
+      document.getElementById("exploreYesLeaf").textContent=yesWords.length===1?"Match: "+yesWords[0]:"Finish branch"
     } else {
-      document.getElementById("exploreYesNext").textContent="→ "+node.yesNode.ch+"?"
+      document.getElementById("exploreYesNext").textContent="Next: "+node.yesNode.ch+"?"
       document.getElementById("exploreYesLeaf").textContent=""
     }
+    document.getElementById("exploreYesCard").setAttribute("aria-label","Yes, the word contains "+node.ch+". "+pluralWords(yesWords.length)+" remain.")
 
-    // NO card
+    document.getElementById("exploreNoRule").textContent="Does not contain "+node.ch
     document.getElementById("exploreNoCount").textContent=pluralWords(noWords.length)
     if(node.noNode.leaf){
       document.getElementById("exploreNoNext").textContent=""
-      document.getElementById("exploreNoLeaf").textContent=node.noNode.word||"(none)"
+      document.getElementById("exploreNoLeaf").textContent=noWords.length===1?"Match: "+noWords[0]:"Finish branch"
     } else {
-      document.getElementById("exploreNoNext").textContent="→ "+node.noNode.ch+"?"
+      document.getElementById("exploreNoNext").textContent="Next: "+node.noNode.ch+"?"
       document.getElementById("exploreNoLeaf").textContent=""
     }
+    document.getElementById("exploreNoCard").setAttribute("aria-label","No, the word does not contain "+node.ch+". "+pluralWords(noWords.length)+" remain.")
   }
 
-  // Word list
   const header=document.getElementById("exploreWordsHeader")
   const grid=document.getElementById("exploreWordsGrid")
   header.textContent=pluralWords(words.length)+" remaining"
-  grid.innerHTML=words.slice().sort().map(w=>`<span class="explore-word">${w}</span>`).join("")
+  grid.replaceChildren()
+  words.slice().sort().forEach(word=>{
+    const chip=document.createElement("span")
+    chip.className="explore-word"
+    chip.textContent=word
+    grid.appendChild(chip)
+  })
 }
 
 document.getElementById("btnExplore").onclick=openExplore
 document.getElementById("exploreClose").onclick=closeExplore
+document.getElementById("exploreRestart").onclick=resetExplore
+document.getElementById("openExploreSettings").onclick=()=>openExplore(true)
 
 document.getElementById("exploreBack").onclick=()=>{
   if(exploreHistory.length===0){closeExplore();return}
@@ -613,38 +888,6 @@ document.getElementById("exploreNoCard").onclick=()=>{
 }
 </script>
 
-<div id="explorePanel">
-  <div id="exploreHeader">
-    <button class="tool-btn" id="exploreBack">← Back</button>
-    <div id="exploreTitle">Explore List</div>
-    <button class="tool-btn" id="exploreClose">Close</button>
-  </div>
-  <div id="explorePath"></div>
-  <div id="exploreQuestion"></div>
-  <div id="exploreLeafCard">
-    <div class="leaf-label">WORD</div>
-    <div class="leaf-word" id="exploreLeafWord"></div>
-  </div>
-  <div id="exploreBranches">
-    <div class="explore-card yes-card" id="exploreYesCard">
-      <div class="card-label">YES</div>
-      <div class="card-next" id="exploreYesNext"></div>
-      <div class="card-count" id="exploreYesCount"></div>
-      <div class="card-leaf" id="exploreYesLeaf"></div>
-    </div>
-    <div class="explore-card no-card" id="exploreNoCard">
-      <div class="card-label">NO</div>
-      <div class="card-next" id="exploreNoNext"></div>
-      <div class="card-count" id="exploreNoCount"></div>
-      <div class="card-leaf" id="exploreNoLeaf"></div>
-    </div>
-  </div>
-  <div id="exploreWordList">
-    <div class="explore-words-header" id="exploreWordsHeader"></div>
-    <div class="explore-words-grid" id="exploreWordsGrid"></div>
-  </div>
-</div>
-
 <div id="helpOverlay">
   <div class="content">
     <b>Quick Start</b><br><br>
@@ -668,13 +911,18 @@ document.getElementById("exploreNoCard").onclick=()=>{
 const helpOverlay=document.getElementById('helpOverlay')
 let helpTap=0
 canvas.addEventListener('pointerdown',e=>{
-  if(e.clientX<window.innerWidth*.25&&e.clientY<window.innerHeight*.25){
+  const r=canvas.getBoundingClientRect()
+  if(e.clientX<r.left+r.width*.25&&e.clientY<r.top+r.height*.25){
     const now=Date.now()
     if(now-helpTap<300){helpOverlay.style.display='block'}
     helpTap=now
   }
 })
 document.getElementById('closeHelp').onclick=()=>helpOverlay.style.display='none'
+
+if("serviceWorker" in navigator&&location.protocol!=="file:"){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}))
+}
 </script>
 
 </body>
