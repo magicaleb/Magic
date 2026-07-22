@@ -346,3 +346,56 @@ html[data-display-mode="fullscreen"] #app{border-radius:0;border:0;box-shadow:no
 }
 
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+/* V2.1.1 — discreet performance refinements */
+#promptToast{display:none!important}
+#peek{
+  position:static;
+  order:3;
+  flex:0 0 12px;
+  width:100%;
+  height:12px;
+  max-width:none;
+  padding:0 10px 2px;
+  overflow:hidden;
+  background:linear-gradient(#e4ddd1,#ded6ca);
+  color:rgba(26,24,20,.24);
+  font-size:8px;
+  font-weight:400;
+  line-height:10px;
+  letter-spacing:.02em;
+  text-align:right;
+  opacity:0;
+  z-index:1;
+}
+#peek.show{opacity:.48}
+#perfDot{bottom:calc(var(--toolbar-height) + 14px)}
+
+#versionButton{font-size:0}
+#versionButton::before{content:'V2.1.1 · Jul 22, 2026';font-size:10px}
+#versionButton::after{font-size:10px}
+#versionPanel .panel-header .version{font-size:0}
+#versionPanel .panel-header .version::after{content:'Current: V2.1.1';font-size:10px}
+.changelog::before{
+  content:'V2.1.1 · Jul 22, 2026\A Removed the first-letter popup, moved the final-word reveal into a low-contrast strip beneath the controls, and corrected Help to preserve performance discretion.';
+  display:block;
+  padding:0 0 12px;
+  margin-bottom:0;
+  border-bottom:1px solid var(--faint);
+  white-space:pre-line;
+  color:#625e57;
+  font-family:'Space Mono',ui-monospace,monospace;
+  font-size:10px;
+  line-height:1.55;
+}
+.changelog article:first-of-type p{font-size:0}
+.changelog article:first-of-type p::after{
+  content:'Added List Lab analytics, theatrical NO optimization, framing checks, answer grouping, safe hidden gestures, and accurate group-based Undo.';
+  font-size:10px;
+}
+.help-content p:nth-of-type(2){font-size:0}
+.help-content p:nth-of-type(2)::after{
+  content:'Before performing, open Settings and note the First Question. Tap Hangman to begin without displaying that letter on the board.';
+  font-size:11px;
+  line-height:1.6;
+}
