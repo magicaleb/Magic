@@ -1,7 +1,7 @@
-const CACHE_NAME = 'hangman-pwa-v2.1.0';
+const CACHE_NAME = 'hangman-pwa-v2.1.1';
 const APP_SHELL = [
   './hangman.html',
-  './hangman.html?v=2.1.0',
+  './hangman.html?v=2.1.1',
   './hangman.css?v=2.1.0',
   './hangman.js?v=2.1.0',
   './hangman-manifest.json',
