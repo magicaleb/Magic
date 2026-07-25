@@ -1,14 +1,17 @@
-const CACHE_NAME = 'hangman-pwa-v2.3.0';
+const CACHE_NAME = 'hangman-pwa-v2.4.0';
 const APP_SHELL = [
   './hangman.html',
-  './hangman.html?v=2.3.0',
-  './hangman.css?v=2.3.0',
-  './hangman-ux.css?v=2.3.0',
-  './hangman-core.js?v=2.3.0',
-  './hangman-performance.js?v=2.3.0',
-  './hangman.js?v=2.3.0',
-  './hangman-lab.js?v=2.3.0',
-  './hangman-ux.js?v=2.3.0',
+  './hangman.html?v=2.4.0',
+  './hangman.css?v=2.4.0',
+  './hangman-ux.css?v=2.4.0',
+  './hangman-settings.css?v=2.4.0',
+  './hangman-core.js?v=2.4.0',
+  './hangman-efficient.js?v=2.4.0',
+  './hangman-performance.js?v=2.4.0',
+  './hangman.js?v=2.4.0',
+  './hangman-lab.js?v=2.4.0',
+  './hangman-ux.js?v=2.4.0',
+  './hangman-settings.js?v=2.4.0',
   './hangman-manifest.json',
   './icon-192.png',
   './icon-512.png'
