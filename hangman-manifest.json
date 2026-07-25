@@ -3,7 +3,7 @@
   "name": "Hangman Magic",
   "short_name": "Hangman",
   "description": "A full-screen Hangman magic trick, list optimizer, and decision-path trainer.",
-  "start_url": "./hangman.html?v=2.3.0",
+  "start_url": "./hangman.html?v=2.4.0",
   "scope": "./",
   "display": "fullscreen",
   "display_override": ["fullscreen", "standalone"],
