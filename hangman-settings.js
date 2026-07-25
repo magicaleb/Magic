@@ -2,6 +2,7 @@
 
 const SETTINGS_VERSION = '2.4.0';
 const SETTINGS_DATE = 'Jul 25, 2026';
+let lookaheadImpactCache = { key: '', rows: [] };
 
 function settingsSectionByTitle(title) {
   return Array.from(document.querySelectorAll('#settingsPanel .panel-scroll > .section')).find((section) => section.querySelector('h2')?.textContent.trim() === title);
@@ -57,12 +58,10 @@ function showSettingsGroup(key) {
 function installSettingsLayout() {
   const scroll = document.querySelector('#settingsPanel .panel-scroll');
   if (!scroll || document.getElementById('settingsTabs')) return;
-
   document.getElementById('settingsAutosaveNote')?.remove();
   const overview = document.createElement('div');
   overview.id = 'settingsOverview';
   overview.className = 'settings-overview';
-
   const tabs = document.createElement('div');
   tabs.id = 'settingsTabs';
   tabs.className = 'settings-tabs';
@@ -77,15 +76,12 @@ function installSettingsLayout() {
     button.addEventListener('click', () => showSettingsGroup(key));
     tabs.append(button);
   });
-
   const performance = createSettingsGroup('performance', 'Everything needed to prepare and perform the effect.', ['Active Word List', 'Performance Inputs', 'Performance Framing']);
   const words = createSettingsGroup('words', 'Tune which words are available without mixing list maintenance into performance setup.', ['Word Eligibility', 'Add Word To Current List', 'Words', 'Create New List']);
   const advanced = createSettingsGroup('advanced', 'Tree behavior, analysis tools, and options you may change less often.', ['Tree Style', 'List Lab']);
-
   scroll.prepend(overview, tabs, performance, words, advanced);
   showSettingsGroup(sessionStorage.getItem('hangmanSettingsGroup') || 'performance');
   refreshSettingsOverview();
-
   const experimental = document.createElement('div');
   experimental.className = 'experimental-note';
   experimental.textContent = 'Experimental Lookahead evaluates several future questions before choosing the next letter. Compare its average and maximum depth with your current style before relying on it in performance.';
@@ -101,6 +97,25 @@ refreshSettings = function refreshSettingsWithLayout() {
 const originalOptimizerLabelForLayout = optimizerLabel;
 optimizerLabel = function optimizerLabelWithLookahead(mode) {
   return mode === 'lookahead' ? 'Experimental Lookahead' : originalOptimizerLabelForLayout(mode);
+};
+
+const originalComputeImpactForLookahead = computeImpactRows;
+computeImpactRows = function computeImpactRowsWithoutLookaheadExplosion() {
+  if (getMeta().optimizer !== 'lookahead') return originalComputeImpactForLookahead();
+  const key = JSON.stringify({ list: currentListName, words: getActiveWords(), mode: 'lookahead-proxy' });
+  if (lookaheadImpactCache.key === key) return lookaheadImpactCache.rows;
+  const meta = getMeta();
+  const selected = meta.optimizer;
+  meta.optimizer = 'fastest';
+  impactCache.key = '';
+  try {
+    const rows = originalComputeImpactForLookahead();
+    lookaheadImpactCache = { key, rows };
+    return rows;
+  } finally {
+    meta.optimizer = selected;
+    impactCache.key = '';
+  }
 };
 
 function updateVersionForSettingsLayout() {
