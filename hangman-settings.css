@@ -1,0 +1,15 @@
+#settingsPanel .panel-scroll{padding-top:10px}
+.settings-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:0 0 10px}
+.settings-overview-card{min-width:0;padding:8px;border:1px solid var(--faint);border-radius:9px;background:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.settings-overview-card strong,.settings-overview-card span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.settings-overview-card strong{font-size:11px}.settings-overview-card span{margin-top:3px;color:#888;font-size:8px;text-transform:uppercase}
+.settings-tabs{position:sticky;top:-10px;z-index:4;display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:0 -1px 14px;padding:8px 1px;background:linear-gradient(var(--bg) 78%,rgba(244,239,230,0))}
+.settings-tab{min-height:40px;border:1px solid var(--faint);border-radius:9px;background:#fff;color:#6c665e;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;font-weight:700}
+.settings-tab.active{border-color:var(--ink);background:var(--ink);color:#fff}
+.settings-group{display:none}.settings-group.active{display:block}
+.settings-group-title{margin:0 0 12px;padding:0 2px;color:#777;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;line-height:1.45}
+#settingsPanel .settings-group>.section{margin:0 0 12px;padding:13px;border:1px solid rgba(207,198,182,.9);border-radius:11px;background:rgba(255,255,255,.58)}
+#settingsPanel .settings-group>.section>h2{font-size:12px}
+#settingsPanel .settings-group>.section .info-box,#settingsPanel .settings-group>.section #firstLetter,#settingsPanel .settings-group>.section #treeSummary,#settingsPanel .settings-group>.section #eligibilitySummary{background:rgba(255,255,255,.82)}
+#settingsPanel .settings-group[data-group="words"] #wordView{max-height:42vh}
+.experimental-note{margin-top:7px;padding:8px;border-radius:8px;background:#f3ead1;color:#69551f;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;line-height:1.45}
+@media(max-width:360px){.settings-overview{grid-template-columns:1fr}.settings-overview-card{display:grid;grid-template-columns:1fr auto;align-items:center}.settings-overview-card span{margin-top:0}}
