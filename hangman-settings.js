@@ -139,4 +139,12 @@ updateVersionForSettingsLayout();
 const lateLieScript = document.createElement('script');
 lateLieScript.src = './hangman-lie.js?v=2.5.0';
 lateLieScript.async = false;
+lateLieScript.addEventListener('load', () => {
+  btnClear.addEventListener('click', resetLateLieSession);
+  btnUndo.addEventListener('click', () => {
+    lateLieArmed = Boolean(curNode?.lateLie || answerGroups.some((group) => group.lateLieActivated));
+    syncLateLieDot();
+  });
+  btnSolve.addEventListener('pointerup', () => requestAnimationFrame(syncLateLieDot));
+});
 document.head.append(lateLieScript);
