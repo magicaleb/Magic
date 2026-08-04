@@ -1,7 +1,7 @@
 'use strict';
 
-const SETTINGS_VERSION = '2.4.0';
-const SETTINGS_DATE = 'Jul 25, 2026';
+const SETTINGS_VERSION = '2.5.0';
+const SETTINGS_DATE = 'Aug 4, 2026';
 let lookaheadImpactCache = { key: '', rows: [] };
 
 function settingsSectionByTitle(title) {
@@ -124,10 +124,10 @@ function updateVersionForSettingsLayout() {
   const current = document.querySelector('#versionPanel .panel-header .version');
   if (current) current.textContent = `Current: V${SETTINGS_VERSION}`;
   const changelog = document.querySelector('#versionPanel .changelog');
-  if (changelog && !changelog.querySelector('[data-version="2.4.0"]')) {
+  if (changelog && !changelog.querySelector('[data-version="2.5.0"]')) {
     const article = document.createElement('article');
-    article.dataset.version = '2.4.0';
-    article.innerHTML = '<h2>V2.4.0 · Jul 25, 2026</h2><p>Reorganized Settings into focused Performance, Word List, and Advanced views, added a compact configuration overview, and added the optional Experimental Lookahead tree optimizer without replacing existing tree styles.</p>';
+    article.dataset.version = '2.5.0';
+    article.innerHTML = '<h2>V2.5.0 · Aug 4, 2026</h2><p>Added optional Late Lie Recovery. After enough truthful narrowing, a discreet green cue appears only when an exact decision plan can still identify the word despite one future false letter answer.</p>';
     changelog.prepend(article);
   }
 }
@@ -135,3 +135,8 @@ function updateVersionForSettingsLayout() {
 installSettingsLayout();
 updateVersionForSettingsLayout();
 ['change', 'input'].forEach((eventName) => document.getElementById('settingsPanel')?.addEventListener(eventName, () => requestAnimationFrame(refreshSettingsOverview)));
+
+const lateLieScript = document.createElement('script');
+lateLieScript.src = './hangman-lie.js?v=2.5.0';
+lateLieScript.async = false;
+document.head.append(lateLieScript);
