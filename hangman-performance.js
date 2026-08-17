@@ -281,7 +281,12 @@ function startPlaying({ preserveLength = false } = {}) {
   redraw();
   const assisted = Boolean(stagedInputs.exactLength || stagedInputs.lengthBucket || stagedInputs.vowelBucket);
   const first = root?.leaf ? getLeafAnswer(root) : root?.ch;
-  if (assisted && first) showTransientReveal(first, 1100);
+  if (assisted && first) {
+    window.clearTimeout(revealTimer);
+    revealTimer = null;
+    revealIsTransient = false;
+    setRevealText(first.length === 1 ? `FIRST ${first}` : first);
+  }
   return true;
 }
 
@@ -400,6 +405,12 @@ function onPointerDown(event) {
   if (sessionPhase === 'lengthCapture') {
     kind = 'length';
   } else if (perfMode) {
+    if (!answerGroups.length && !pendingGroup) {
+      window.clearTimeout(revealTimer);
+      revealTimer = null;
+      revealIsTransient = false;
+      setRevealText('');
+    }
     kind = 'answer';
     const isYes = isYesZone(y);
     const group = beginPendingGroup(isYes);
