@@ -12,6 +12,7 @@ function hidePanel(panel) {
 
 function openSettings() {
   refreshSettings();
+  if (typeof showSettingsGroup === 'function') showSettingsGroup('performance');
   showPanel(settingsPanel);
 }
 
@@ -26,17 +27,13 @@ function pluralWords(number) {
 }
 
 function optimizerLabel(mode) {
-  return {
-    fastest: 'Fastest Average',
-    balanced: 'Balanced Worst Case',
-    moreNos: 'More NOs',
-    longNoRuns: 'Theatrical NOs',
-    custom: 'Custom'
-  }[mode] || mode;
+  return mode === 'longNoRuns' ? 'Dramatic' : 'Efficient';
 }
 
 function renderOptimizerDescription() {
-  byId('optimizerDescription').textContent = OPTIMIZER_DESCRIPTIONS[optimizerSelect.value] || '';
+  byId('optimizerDescription').textContent = optimizerSelect.value === 'longNoRuns'
+    ? 'Favors convincing runs of NO answers. It can take slightly longer, but usually feels more theatrical.'
+    : 'Keeps performances predictable and avoids unusually long question paths.';
 }
 
 function renderInputModeDescription() {
@@ -48,10 +45,10 @@ function renderInputModeDescription() {
     mediumMax: Number(byId('mediumMax').value) || 7
   };
   const parts = [];
-  if (meta.lengthMode === 'exact') parts.push('Tap Hangman, draw one blank line per letter, then tap Hangman again. The filtered first question appears only in the faint reveal strip.');
+  if (meta.lengthMode === 'exact') parts.push('Tap Hangman, draw one blank line per letter, then tap Hangman again. The filtered first question appears in the discreet reveal strip.');
   if (meta.lengthMode === 'bucket') parts.push(`Before starting, hold Hangman and release in the left, middle, or right third for Short (≤${meta.shortMax}), Medium (${meta.shortMax + 1}–${meta.mediumMax}), or Long (${meta.mediumMax + 1}+).`);
   if (meta.vowelMode) parts.push('Before starting, hold Solve and release left, middle, or right for 1, 2, or 3+ distinct vowels. With a known limit of 1 or 2, the tree stops asking vowels after that many vowel YES answers.');
-  if (!parts.length) parts.push('No pre-filter is used. Note the First Question in Settings before performing.');
+  if (!parts.length) parts.push('No secret input is used. The opening question is shown at the top of Performance settings.');
   byId('inputModeDescription').textContent = parts.join(' ');
 }
 
@@ -279,8 +276,13 @@ createListBtn.addEventListener('click', () => {
   if (!name || !words.length) return;
   lists[name] = words;
   listMeta[name] = defaultMetaFor(name);
+  currentListName = name;
+  localStorage.setItem(STORAGE_KEYS.activeList, currentListName);
   saveLists();
   saveListMeta();
+  resetInputState();
+  rebuildTree();
+  clearAll();
   byId('newListName').value = '';
   byId('newListWords').value = '';
   refreshSettings();
@@ -291,9 +293,8 @@ function isExploreModeEnabled() {
 }
 
 function syncExploreButton() {
-  const enabled = isExploreModeEnabled();
-  btnExplore.hidden = !enabled;
-  toolbar.classList.toggle('explore-enabled', enabled);
+  btnExplore.hidden = true;
+  toolbar.classList.remove('explore-enabled');
   scheduleResize();
 }
 
@@ -338,5 +339,7 @@ function closeExplore() {
   if (exploreReturnToSettings) {
     exploreReturnToSettings = false;
     openSettings();
+    if (typeof showSettingsGroup === 'function') showSettingsGroup('words');
   }
 }
+
