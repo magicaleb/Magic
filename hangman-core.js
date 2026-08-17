@@ -1,7 +1,7 @@
 'use strict';
 
-const APP_VERSION = '2.2.0';
-const APP_DATE = 'Jul 22, 2026';
+const APP_VERSION = '2.6.0';
+const APP_DATE = 'Aug 17, 2026';
 const ADVANCE_DELAY = 650;
 const LONG_PRESS_DELAY = 420;
 const EXPLORE_ON = '1';
@@ -96,6 +96,15 @@ function loadListMeta(listNames) {
   listNames.forEach((name) => {
     result[name] = { ...defaultMetaFor(name), ...(result[name] || {}) };
     result[name].omitted = normalizeWords(result[name].omitted || []);
+    const legacyOptimizer = result[name].optimizer;
+    if (!['balanced', 'longNoRuns'].includes(legacyOptimizer)) {
+      if (legacyOptimizer === 'moreNos') result[name].optimizer = 'longNoRuns';
+      else if (legacyOptimizer === 'custom') {
+        const target = Math.max(0, Number(result[name].customTargetNos) || 0);
+        const maximum = Math.max(2, Number(result[name].customMaxQuestions) || 9);
+        result[name].optimizer = target / maximum >= 0.5 ? 'longNoRuns' : 'balanced';
+      } else result[name].optimizer = 'balanced';
+    }
   });
   return result;
 }
