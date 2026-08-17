@@ -309,35 +309,19 @@ solve = function solveWithLateLie() {
 };
 
 function installLateLieSettings() {
-  if (document.getElementById('lateLieModeToggle')) return;
-  const group = document.querySelector('.settings-group[data-group="performance"]');
-  if (!group) return;
-
-  const section = document.createElement('section');
-  section.className = 'section late-lie-section';
-  section.innerHTML = `
-    <h2>Late Lie Recovery</h2>
-    <p class="section-copy">Optionally offer one false letter answer only after the app has narrowed the word enough to guarantee recovery.</p>
-    <label class="setting-toggle">
-      <input type="checkbox" id="lateLieModeToggle">
-      <span><strong>Enable the late-lie cue</strong><small>The spectator may reverse one future YES or NO. You never need to know which answer was false.</small></span>
-    </label>
-    <div class="late-lie-legend"><span class="late-lie-legend-dot"></span><span>When this discreet green dot appears on the performance screen, you may say they can lie once from the next letter onward. If it turns amber, every surviving path says the lie has already been used. No dot means the app has not found a guaranteed recovery path yet.</span></div>
-    <div id="lateLieDescription" class="info-box"></div>
-    <button id="lateLieCoverageButton" class="settings-action secondary" type="button">Check Cue Coverage</button>
-    <div id="lateLieCoverage" class="late-lie-coverage">Coverage has not been checked for this list.</div>
-  `;
-  group.append(section);
-
   const toggle = document.getElementById('lateLieModeToggle');
+  const coverageButton = document.getElementById('lateLieCoverageButton');
+  if (!toggle || !coverageButton || toggle.dataset.bound === '1') return;
+  toggle.dataset.bound = '1';
   toggle.addEventListener('change', () => {
     getMeta().lateLieMode = toggle.checked;
     saveListMeta();
     lateLiePlanCache = new Map();
     clearAll();
-    refreshLateLieSettings();
+    refreshSettings();
+    if (toggle.checked) analyzeLateLieCoverage();
   });
-  document.getElementById('lateLieCoverageButton').addEventListener('click', analyzeLateLieCoverage);
+  coverageButton.addEventListener('click', analyzeLateLieCoverage);
   refreshLateLieSettings();
 }
 
@@ -347,8 +331,8 @@ function refreshLateLieSettings() {
   if (toggle) toggle.checked = lateLieEnabled();
   if (description) {
     description.textContent = lateLieEnabled()
-      ? `Active. The cue waits for at least ${LATE_LIE_MIN_NORMAL_ANSWERS} normal answers, no more than ${LATE_LIE_MAX_CANDIDATES} remaining candidates, and an exact recovery plan requiring at most ${LATE_LIE_MAX_RECOVERY_QUESTIONS} additional letter questions.`
-      : 'Off. Performances continue to use the selected normal decision tree.';
+      ? `The cue waits until an exact recovery plan is guaranteed. Current safety limits allow at most ${LATE_LIE_MAX_RECOVERY_QUESTIONS} additional questions.`
+      : 'Off. The selected Efficient or Dramatic strategy runs normally.';
   }
 }
 
@@ -409,7 +393,8 @@ async function analyzeLateLieCoverage() {
   }
 
   button.disabled = false;
-  button.textContent = 'Check Cue Coverage';
+  button.textContent = 'Check Coverage';
+  renderFirstLetter();
 }
 
 const originalRefreshSettingsForLateLie = refreshSettings;
@@ -421,3 +406,9 @@ refreshSettings = function refreshSettingsWithLateLie() {
 installLateLieDot();
 installLateLieSettings();
 refreshLateLieSettings();
+btnClear.addEventListener('click', resetLateLieSession);
+btnUndo.addEventListener('click', () => {
+  lateLieArmed = Boolean(curNode?.lateLie || answerGroups.some((group) => group.lateLieActivated));
+  syncLateLieDot();
+});
+btnSolve.addEventListener('pointerup', () => requestAnimationFrame(syncLateLieDot));
