@@ -80,10 +80,6 @@ chooseSplit = function chooseSplitWithExperimentalMode(words, mode, options, dep
   return originalChooseSplitForEfficiency(words, mode, options, depth, currentNoRun, context);
 };
 
-const optimizerSelectForLookahead = document.getElementById('optimizerSelect');
-if (optimizerSelectForLookahead && !optimizerSelectForLookahead.querySelector('[value="lookahead"]')) {
-  const option = document.createElement('option');
-  option.value = LOOKAHEAD_MODE;
-  option.textContent = 'Experimental Lookahead';
-  optimizerSelectForLookahead.insertBefore(option, optimizerSelectForLookahead.querySelector('[value="custom"]'));
-}
+// Lookahead remains available for internal analysis, but is intentionally not
+// exposed as a separate performance setting. Performers choose an outcome,
+// while the app owns the underlying algorithm.
