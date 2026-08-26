@@ -1,5 +1,7 @@
 'use strict';
 
+let listDeleteMode = false;
+
 function enhancedRenderWords() {
   const container = byId('wordView');
   container.replaceChildren();
@@ -20,7 +22,7 @@ function enhancedRenderWords() {
     shown += 1;
 
     const row = document.createElement('div');
-    row.className = 'word-row';
+    row.className = `word-row ${listDeleteMode ? 'delete-mode' : ''}`;
     const nameWrap = document.createElement('div');
     nameWrap.className = 'word-name';
     const name = document.createElement('strong');
@@ -34,8 +36,10 @@ function enhancedRenderWords() {
 
     const omit = document.createElement('button');
     omit.type = 'button';
-    omit.className = 'word-action omit';
-    omit.textContent = manual ? 'Include' : 'Omit';
+    omit.className = 'word-action include-toggle';
+    omit.textContent = manual ? 'Omitted' : 'Included';
+    omit.setAttribute('aria-pressed', String(!manual));
+    omit.setAttribute('aria-label', `${word} is ${manual ? 'omitted' : 'included'}; toggle performance inclusion`);
     omit.addEventListener('click', () => {
       const set = new Set(getMeta().omitted || []);
       if (set.has(word)) set.delete(word); else set.add(word);
@@ -49,6 +53,7 @@ function enhancedRenderWords() {
     remove.type = 'button';
     remove.className = 'word-action delete';
     remove.textContent = 'Delete';
+    remove.hidden = !listDeleteMode;
     remove.addEventListener('click', () => {
       if (!window.confirm(`Delete ${word} from “${currentListName}”?`)) return;
       lists[currentListName] = getAllWords().filter((item) => item !== word);
@@ -59,12 +64,7 @@ function enhancedRenderWords() {
       refreshSettings();
     });
 
-    const menu = document.createElement('details');
-    menu.className = 'word-menu';
-    const summary = document.createElement('summary');
-    summary.textContent = 'More';
-    menu.append(summary, remove);
-    row.append(nameWrap, omit, menu);
+    row.append(nameWrap, omit, remove);
     container.append(row);
   });
 
@@ -140,8 +140,12 @@ function enhancedRenderFirstLetter() {
   byId('readyList').textContent = currentListName;
   byId('readyCount').textContent = `${active.length}/${total} active`;
   byId('readyStrategy').textContent = optimizerLabel(meta.optimizer);
+  const maxNos = Math.max(0, ...treeAnalysis.analyses.map((item) => item.totalNo));
+  const sixPlus = treeAnalysis.analyses.filter((item) => item.totalNo >= 6).length;
+  byId('readySafety').textContent = sixPlus ? `${sixPlus} at 6+` : `Max ${maxNos}`;
+  document.querySelector('.ready-card').classList.toggle('unsafe', sixPlus > 0);
   byId('readyAssist').textContent = assistLabel(meta);
-  byId('readyLie').textContent = meta.lateLieMode ? 'On' : 'Off';
+  byId('readyLie').textContent = meta.lateLieMode ? 'Show when safe' : 'Off';
   byId('listStatusName').textContent = currentListName;
   byId('listStatusCount').textContent = `${active.length}/${total}`;
   byId('listStatusFirst').textContent = assisted ? 'Varies by input' : base.short;
@@ -150,6 +154,10 @@ function enhancedRenderFirstLetter() {
   const matrix = byId('firstQuestionMatrix');
   const rows = assisted && active.length ? startingQuestionInputs(meta, active) : [];
   details.hidden = !rows.length;
+  if (rows.length && details.dataset.autoOpened !== '1') {
+    details.open = true;
+    details.dataset.autoOpened = '1';
+  }
   details.querySelector('summary').textContent = rows.length === 1 ? 'View starting question' : `View ${rows.length} starting questions`;
   matrix.replaceChildren(...rows.map(({ label, input }) => {
     const result = startingQuestionFor(input);
@@ -173,7 +181,9 @@ function enhancedRenderFirstLetter() {
 function enhancedRenderTreeSummary() {
   const stats = treeAnalysis;
   const omitted = getAllWords().length - getActiveWords().length;
-  byId('treeSummary').textContent = `${stats.averageQuestions.toFixed(1)} typical questions · ${stats.maxQuestions} maximum · ${stats.averageNos.toFixed(1)} typical NOs${omitted ? ` · ${omitted} words omitted` : ''}.`;
+  const maxNos = Math.max(0, ...stats.analyses.map((item) => item.totalNo));
+  const sixPlus = stats.analyses.filter((item) => item.totalNo >= 6).length;
+  byId('treeSummary').textContent = `${stats.averageNos.toFixed(1)} typical NOs · ${maxNos} maximum NOs · ${stats.averageQuestions.toFixed(1)} typical questions · ${stats.maxQuestions} maximum questions${sixPlus ? ` · ${sixPlus} paths reach 6+ NOs` : ' · no path reaches 6 NOs'}${omitted ? ` · ${omitted} words omitted` : ''}.`;
 }
 
 function enhancedRefreshListSelect() {
@@ -245,8 +255,13 @@ byId('deleteListBtn').addEventListener('click', () => {
 
 byId('wordSearch').addEventListener('input', renderWords);
 byId('wordStatusFilter').addEventListener('change', renderWords);
+byId('toggleDeleteMode').addEventListener('click', (event) => {
+  listDeleteMode = !listDeleteMode;
+  event.currentTarget.setAttribute('aria-pressed', String(listDeleteMode));
+  event.currentTarget.textContent = listDeleteMode ? 'Done' : 'Edit';
+  renderWords();
+});
 localStorage.setItem(STORAGE_KEYS.exploreMode, '0');
 btnExplore.hidden = true;
 toolbar.classList.remove('explore-enabled');
 refreshSettings();
-
