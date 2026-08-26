@@ -1,7 +1,7 @@
 'use strict';
 
-const APP_VERSION = '2.2.0';
-const APP_DATE = 'Jul 22, 2026';
+const APP_VERSION = '2.7.0';
+const APP_DATE = 'Aug 25, 2026';
 const ADVANCE_DELAY = 650;
 const LONG_PRESS_DELAY = 420;
 const EXPLORE_ON = '1';
@@ -30,11 +30,7 @@ const LIKELY_BRANDS = new Set(['AIRPODS', 'SHARPIE', 'TUPPERWARE']);
 const PLURAL_EXCEPTIONS = new Set(['GLASS']);
 
 const OPTIMIZER_DESCRIPTIONS = {
-  fastest: 'Minimizes the average number of letter questions. Most performances finish quickly, but a few unusual words can still take longer.',
-  balanced: 'Keeps the largest remaining branch as small as possible. Performances are more consistent and the worst case is prioritized over the average.',
-  moreNos: 'Favors letters that are absent from more candidate words. It increases the total number of NO answers without specifically trying to place them consecutively.',
-  longNoRuns: 'Favors several NO answers in a row for a more theatrical hangman sequence, while still penalizing trees that become excessively deep.',
-  custom: 'Uses your target number of NOs and maximum-question preference as scoring goals. They guide the tree but are not strict guarantees for every word.'
+  progressive: 'Looks ahead and minimizes the worst-case number of NO answers before optimizing typical NOs and total questions.'
 };
 
 function byId(id) {
@@ -73,7 +69,7 @@ function defaultMetaFor(name) {
     framing: name === 'cars'
       ? 'Think of a well-known car brand you can spell confidently. Use the common brand name, not a specific model.'
       : DEFAULT_FRAMING,
-    optimizer: name === 'cars' ? 'balanced' : 'longNoRuns',
+    optimizer: 'progressive',
     customTargetNos: 5,
     customMaxQuestions: 9,
     omitted: [],
@@ -86,7 +82,8 @@ function defaultMetaFor(name) {
     lengthMode: 'none',
     shortMax: 5,
     mediumMax: 7,
-    vowelMode: false
+    vowelMode: false,
+    lateLieMode: false
   };
 }
 
@@ -96,6 +93,7 @@ function loadListMeta(listNames) {
   listNames.forEach((name) => {
     result[name] = { ...defaultMetaFor(name), ...(result[name] || {}) };
     result[name].omitted = normalizeWords(result[name].omitted || []);
+    result[name].optimizer = 'progressive';
   });
   return result;
 }

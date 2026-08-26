@@ -7,6 +7,7 @@ const LATE_LIE_SEARCH_LIMIT_MS = 55;
 const LATE_LIE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 let lateLieArmed = false;
+let lateLieOpportunity = null;
 let lateLiePlanCache = new Map();
 let lateLieCoverageRun = 0;
 
@@ -192,85 +193,79 @@ function answeredLetterHistory(extraLetter = '') {
   return letters;
 }
 
-function planAfterNormalAnswer(nodeBefore, isYes) {
-  if (!lateLieEnabled() || lateLieArmed || !nodeBefore || nodeBefore.leaf || nodeBefore.lateLie) return null;
-  if (answerGroups.length + 1 < LATE_LIE_MIN_NORMAL_ANSWERS) return null;
-  const branch = isYes ? nodeBefore.yesNode : nodeBefore.noNode;
-  if (!branch || branch.leaf || !branch.words?.length) return null;
-  return buildGuaranteedLateLiePlan(branch.words, answeredLetterHistory(nodeBefore.ch));
+function refreshLateLieOpportunity() {
+  lateLieOpportunity = null;
+  if (!lateLieEnabled() || lateLieArmed || !perfMode || sessionPhase !== 'playing') {
+    updateCandidateIndicator();
+    return;
+  }
+  if (answerGroups.length < LATE_LIE_MIN_NORMAL_ANSWERS || !curNode || curNode.leaf || curNode.lateLie) {
+    updateCandidateIndicator();
+    return;
+  }
+  const words = curNode.words || [];
+  if (words.length < 2 || words.length > LATE_LIE_MAX_CANDIDATES) {
+    updateCandidateIndicator();
+    return;
+  }
+  lateLieOpportunity = buildGuaranteedLateLiePlan(words, answeredLetterHistory());
+  updateCandidateIndicator();
 }
 
-function installLateLieDot() {
-  if (document.getElementById('lateLieDot')) return;
-  const dot = document.createElement('div');
-  dot.id = 'lateLieDot';
-  dot.setAttribute('aria-hidden', 'true');
-  app.append(dot);
-
-  const style = document.createElement('style');
-  style.id = 'lateLieStyles';
-  style.textContent = `
-    #lateLieDot{position:absolute;left:25px;bottom:17px;z-index:3;width:7px;height:7px;border-radius:50%;background:#2e6f3e;box-shadow:0 0 0 2px rgba(46,111,62,.18);opacity:0;transform:scale(.7);transition:opacity .18s ease,transform .18s ease;pointer-events:none}
-    #lateLieDot.show{opacity:.86;transform:scale(1)}
-    #lateLieDot.detected{background:#9a6a10;box-shadow:0 0 0 2px rgba(154,106,16,.18)}
-    .late-lie-section .info-box{margin-top:10px}
-    .late-lie-legend{display:flex;align-items:flex-start;gap:8px;margin-top:9px;color:#6f6a61;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;line-height:1.45}
-    .late-lie-legend-dot{flex:0 0 auto;width:7px;height:7px;margin-top:3px;border-radius:50%;background:#2e6f3e;box-shadow:0 0 0 2px rgba(46,111,62,.18)}
-    .late-lie-coverage{margin-top:9px;padding:9px 10px;border:1px solid var(--faint);border-radius:8px;background:#fff;color:#5f5a53;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;line-height:1.5}
-  `;
-  document.head.append(style);
+function armLateLieOpportunity() {
+  if (!lateLieEnabled() || lateLieArmed || !lateLieOpportunity || sessionPhase !== 'playing') return;
+  curNode = lateLieOpportunity;
+  lateLieArmed = true;
+  lateLieOpportunity = null;
+  const activationGroup = answerGroups[answerGroups.length - 1];
+  if (activationGroup) {
+    activationGroup.lateLieActivated = true;
+    activationGroup.nodeAfter = curNode;
+  }
+  const first = curNode?.leaf ? getLeafAnswer(curNode) : curNode?.ch;
+  if (first) showTransientReveal(first, 950);
+  updateCandidateIndicator();
 }
 
-function syncLateLieDot() {
-  const dot = document.getElementById('lateLieDot');
-  if (!dot) return;
-  const visible = lateLieEnabled() && lateLieArmed && sessionPhase === 'playing' && perfMode && curNode && !curNode.leaf;
-  dot.classList.toggle('show', Boolean(visible));
-  const states = curNode?.lieStates || [];
-  const lieMustBeUsed = states.length > 0 && states.every((state) => state.lieUsed);
-  dot.classList.toggle('detected', Boolean(visible && lieMustBeUsed));
+candidateIndicatorState = function lateLieCandidateIndicatorState() {
+  if (!lateLieEnabled()) return { suffix: '', interactive: false, armed: false };
+  if (lateLieArmed) {
+    return {
+      suffix: '•',
+      interactive: false,
+      armed: true,
+      label: `${curNode?.words?.length || 0} candidate words remaining; one-lie recovery armed`
+    };
+  }
+  if (lateLieOpportunity) {
+    return {
+      suffix: '°',
+      interactive: true,
+      armed: false,
+      label: `${curNode?.words?.length || 0} candidate words remaining; tap to arm one safe lie`
+    };
+  }
+  return { suffix: '', interactive: false, armed: false };
+};
+
+function installLateLieIndicator() {
+  if (perfDot.dataset.lieBound === '1') return;
+  perfDot.dataset.lieBound = '1';
+  perfDot.addEventListener('click', armLateLieOpportunity);
 }
 
 function resetLateLieSession() {
   lateLieArmed = false;
-  syncLateLieDot();
+  lateLieOpportunity = null;
+  updateCandidateIndicator();
 }
 
-const originalNextPromptForLateLie = nextPromptFor;
-nextPromptFor = function nextPromptWithLateLie(node, isYes) {
-  if (node?.lateLie) return originalNextPromptForLateLie(node, isYes);
-  const plan = planAfterNormalAnswer(node, isYes);
-  if (plan) return plan.leaf ? getLeafAnswer(plan) : plan.ch;
-  return originalNextPromptForLateLie(node, isYes);
-};
-
+const originalFinalizePendingGroupForLateLie = finalizePendingGroup;
 finalizePendingGroup = function finalizePendingGroupWithLateLie() {
-  cancelPendingTimer();
-  if (!pendingGroup) return;
-  if (!pendingGroup.strokes.length) {
-    pendingGroup = null;
-    return;
-  }
-
-  const nodeBefore = pendingGroup.nodeBefore;
-  let nodeAfter = nodeBefore && !nodeBefore.leaf
-    ? (pendingGroup.isYes ? nodeBefore.yesNode : nodeBefore.noNode)
-    : nodeBefore;
-  let lateLieActivated = false;
-
-  if (!lateLieArmed) {
-    const plan = planAfterNormalAnswer(nodeBefore, pendingGroup.isYes);
-    if (plan) {
-      nodeAfter = plan;
-      lateLieArmed = true;
-      lateLieActivated = true;
-    }
-  }
-
-  answerGroups.push({ ...pendingGroup, nodeAfter, lateLieActivated });
-  curNode = nodeAfter;
-  pendingGroup = null;
-  syncLateLieDot();
+  const groupCount = answerGroups.length;
+  originalFinalizePendingGroupForLateLie();
+  if (answerGroups.length !== groupCount && !lateLieArmed) refreshLateLieOpportunity();
+  else updateCandidateIndicator();
 };
 
 const originalResetBoardForLateLie = resetBoard;
@@ -297,47 +292,33 @@ const originalUndoForLateLie = undo;
 undo = function undoWithLateLie() {
   const result = originalUndoForLateLie();
   lateLieArmed = Boolean(curNode?.lateLie || answerGroups.some((group) => group.lateLieActivated));
-  syncLateLieDot();
+  lateLieOpportunity = null;
+  if (!lateLieArmed) refreshLateLieOpportunity();
+  else updateCandidateIndicator();
   return result;
 };
 
 const originalSolveForLateLie = solve;
 solve = function solveWithLateLie() {
   const result = originalSolveForLateLie();
-  syncLateLieDot();
+  resetLateLieSession();
   return result;
 };
 
 function installLateLieSettings() {
-  if (document.getElementById('lateLieModeToggle')) return;
-  const group = document.querySelector('.settings-group[data-group="performance"]');
-  if (!group) return;
-
-  const section = document.createElement('section');
-  section.className = 'section late-lie-section';
-  section.innerHTML = `
-    <h2>Late Lie Recovery</h2>
-    <p class="section-copy">Optionally offer one false letter answer only after the app has narrowed the word enough to guarantee recovery.</p>
-    <label class="setting-toggle">
-      <input type="checkbox" id="lateLieModeToggle">
-      <span><strong>Enable the late-lie cue</strong><small>The spectator may reverse one future YES or NO. You never need to know which answer was false.</small></span>
-    </label>
-    <div class="late-lie-legend"><span class="late-lie-legend-dot"></span><span>When this discreet green dot appears on the performance screen, you may say they can lie once from the next letter onward. If it turns amber, every surviving path says the lie has already been used. No dot means the app has not found a guaranteed recovery path yet.</span></div>
-    <div id="lateLieDescription" class="info-box"></div>
-    <button id="lateLieCoverageButton" class="settings-action secondary" type="button">Check Cue Coverage</button>
-    <div id="lateLieCoverage" class="late-lie-coverage">Coverage has not been checked for this list.</div>
-  `;
-  group.append(section);
-
   const toggle = document.getElementById('lateLieModeToggle');
+  const coverageButton = document.getElementById('lateLieCoverageButton');
+  if (!toggle || !coverageButton || toggle.dataset.bound === '1') return;
+  toggle.dataset.bound = '1';
   toggle.addEventListener('change', () => {
     getMeta().lateLieMode = toggle.checked;
     saveListMeta();
     lateLiePlanCache = new Map();
     clearAll();
-    refreshLateLieSettings();
+    refreshSettings();
+    if (toggle.checked) analyzeLateLieCoverage();
   });
-  document.getElementById('lateLieCoverageButton').addEventListener('click', analyzeLateLieCoverage);
+  coverageButton.addEventListener('click', analyzeLateLieCoverage);
   refreshLateLieSettings();
 }
 
@@ -347,8 +328,8 @@ function refreshLateLieSettings() {
   if (toggle) toggle.checked = lateLieEnabled();
   if (description) {
     description.textContent = lateLieEnabled()
-      ? `Active. The cue waits for at least ${LATE_LIE_MIN_NORMAL_ANSWERS} normal answers, no more than ${LATE_LIE_MAX_CANDIDATES} remaining candidates, and an exact recovery plan requiring at most ${LATE_LIE_MAX_RECOVERY_QUESTIONS} additional letter questions.`
-      : 'Off. Performances continue to use the selected normal decision tree.';
+      ? `A ° appears only after an exact recovery plan is guaranteed. Tap it to arm up to one false future answer; recovery uses at most ${LATE_LIE_MAX_RECOVERY_QUESTIONS} additional questions.`
+      : 'Off. The Progressive Anagram tree runs normally and the remaining-word count stays informational.';
   }
 }
 
@@ -400,16 +381,17 @@ async function analyzeLateLieCoverage() {
   const available = results.filter((result) => result.cueAfter !== null);
   const percent = Math.round((available.length / words.length) * 100);
   if (!available.length) {
-    output.textContent = `No guaranteed late-lie cue was found for this ${words.length}-word tree under the current safety limits. The normal performance still works unchanged.`;
+    output.textContent = `No guaranteed lie opportunity was found for this ${words.length}-word tree under the current safety limits. The normal performance still works unchanged.`;
   } else {
     const averageCue = available.reduce((sum, result) => sum + result.cueAfter, 0) / available.length;
     const worstRecovery = Math.max(...available.map((result) => result.recoveryDepth));
     const unavailable = results.filter((result) => result.cueAfter === null).slice(0, 8).map((result) => result.word);
-    output.textContent = `Cue available for ${available.length} of ${words.length} words (${percent}%). It appears after ${averageCue.toFixed(1)} normal answers on average; the longest guaranteed recovery uses ${worstRecovery} more questions.${unavailable.length ? ` No cue found for examples: ${unavailable.join(', ')}${results.length - available.length > unavailable.length ? '…' : ''}.` : ''}`;
+    output.textContent = `Opportunity available for ${available.length} of ${words.length} words (${percent}%). It appears after ${averageCue.toFixed(1)} normal answers on average; the longest guaranteed recovery uses ${worstRecovery} more questions.${unavailable.length ? ` No opportunity found for examples: ${unavailable.join(', ')}${results.length - available.length > unavailable.length ? '…' : ''}.` : ''}`;
   }
 
   button.disabled = false;
-  button.textContent = 'Check Cue Coverage';
+  button.textContent = 'Check Opportunities';
+  renderFirstLetter();
 }
 
 const originalRefreshSettingsForLateLie = refreshSettings;
@@ -418,6 +400,14 @@ refreshSettings = function refreshSettingsWithLateLie() {
   refreshLateLieSettings();
 };
 
-installLateLieDot();
+installLateLieIndicator();
 installLateLieSettings();
 refreshLateLieSettings();
+btnClear.addEventListener('click', resetLateLieSession);
+btnUndo.addEventListener('click', () => {
+  lateLieArmed = Boolean(curNode?.lateLie || answerGroups.some((group) => group.lateLieActivated));
+  lateLieOpportunity = null;
+  if (!lateLieArmed) refreshLateLieOpportunity();
+  else updateCandidateIndicator();
+});
+btnSolve.addEventListener('pointerup', () => requestAnimationFrame(resetLateLieSession));

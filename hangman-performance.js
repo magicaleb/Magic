@@ -54,6 +54,19 @@ let resizeFrame = null;
 let groupSequence = 0;
 let gestureCandidate = null;
 let lastCornerTap = { left: 0, right: 0 };
+let candidateIndicatorState = () => ({ suffix: '', interactive: false, armed: false });
+
+function updateCandidateIndicator() {
+  const visible = Boolean(perfMode && sessionPhase === 'playing' && curNode);
+  const count = curNode?.words?.length || (curNode?.word ? 1 : 0);
+  const state = candidateIndicatorState() || {};
+  perfDot.textContent = visible && count ? `${count}${state.suffix || ''}` : '';
+  perfDot.classList.toggle('show', visible && count > 0);
+  perfDot.classList.toggle('lie-available', Boolean(visible && state.interactive));
+  perfDot.classList.toggle('lie-armed', Boolean(visible && state.armed));
+  perfDot.tabIndex = visible && state.interactive ? 0 : -1;
+  perfDot.setAttribute('aria-label', state.label || `${count} candidate word${count === 1 ? '' : 's'} remaining`);
+}
 
 function syncDisplayMode() {
   const standalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -215,6 +228,7 @@ function finalizePendingGroup() {
   answerGroups.push({ ...pendingGroup, nodeAfter });
   curNode = nodeAfter;
   pendingGroup = null;
+  updateCandidateIndicator();
 }
 
 function scheduleGroupCommit() {
@@ -242,6 +256,7 @@ function resetBoard({ preserveLength = false } = {}) {
   pendingGroup = null;
   curNode = root;
   hidePeek();
+  updateCandidateIndicator();
   redraw();
 }
 
@@ -253,7 +268,7 @@ function startLengthCapture() {
   sessionPhase = 'lengthCapture';
   perfMode = false;
   scaffold = true;
-  perfDot.classList.add('show');
+  updateCandidateIndicator();
   redraw();
 }
 
@@ -277,11 +292,16 @@ function startPlaying({ preserveLength = false } = {}) {
   sessionPhase = 'playing';
   perfMode = true;
   scaffold = true;
-  perfDot.classList.add('show');
+  updateCandidateIndicator();
   redraw();
   const assisted = Boolean(stagedInputs.exactLength || stagedInputs.lengthBucket || stagedInputs.vowelBucket);
   const first = root?.leaf ? getLeafAnswer(root) : root?.ch;
-  if (assisted && first) showTransientReveal(first, 1100);
+  if (assisted && first) {
+    window.clearTimeout(revealTimer);
+    revealTimer = null;
+    revealIsTransient = false;
+    setRevealText(first.length === 1 ? `FIRST ${first}` : first);
+  }
   return true;
 }
 
@@ -332,7 +352,7 @@ function clearAll() {
   perfMode = false;
   scaffold = false;
   sessionPhase = 'idle';
-  perfDot.classList.remove('show');
+  updateCandidateIndicator();
   clearReveal(true);
   btnSolve.textContent = 'Solve';
   redraw();
@@ -400,6 +420,12 @@ function onPointerDown(event) {
   if (sessionPhase === 'lengthCapture') {
     kind = 'length';
   } else if (perfMode) {
+    if (!answerGroups.length && !pendingGroup) {
+      window.clearTimeout(revealTimer);
+      revealTimer = null;
+      revealIsTransient = false;
+      setRevealText('');
+    }
     kind = 'answer';
     const isYes = isYesZone(y);
     const group = beginPendingGroup(isYes);
@@ -489,6 +515,7 @@ function undo() {
     removeStrokesForGroup(groupId);
     curNode = pendingGroup.nodeBefore;
     pendingGroup = null;
+    updateCandidateIndicator();
     redraw();
     return;
   }
@@ -496,6 +523,7 @@ function undo() {
     const group = answerGroups.pop();
     removeStrokesForGroup(group.id);
     curNode = group.nodeBefore;
+    updateCandidateIndicator();
     redraw();
     return;
   }
@@ -509,7 +537,7 @@ function solve() {
   perfMode = false;
   sessionPhase = 'idle';
   hidePeek();
-  perfDot.classList.remove('show');
+  updateCandidateIndicator();
   const yesIds = new Set(answerGroups.filter((group) => group.isYes).map((group) => group.id));
   strokes = strokes.filter((stroke) => !yesIds.has(stroke.groupId));
   answerGroups = answerGroups.filter((group) => !group.isYes);

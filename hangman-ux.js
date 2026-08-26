@@ -1,13 +1,22 @@
 'use strict';
 
-const UX_VERSION = '2.3.0';
-const UX_DATE = 'Jul 25, 2026';
+const UX_VERSION = APP_VERSION;
+const UX_DATE = APP_DATE;
 let uxSaveTimer = null;
 let impactCache = { key: '', rows: [] };
 
-function debounceUxSave(action, delay = 180) {
+function markSettingsSaveStatus(text) {
+  const status = document.getElementById('settingsSaveStatus');
+  if (status) status.textContent = text;
+}
+
+function debounceUxSave(action, delay = 320) {
   window.clearTimeout(uxSaveTimer);
-  uxSaveTimer = window.setTimeout(action, delay);
+  markSettingsSaveStatus('Saving…');
+  uxSaveTimer = window.setTimeout(() => {
+    action();
+    markSettingsSaveStatus('Saved');
+  }, delay);
 }
 
 function clickIfPresent(id) {
@@ -55,16 +64,8 @@ function installImmediateSettings() {
     clickIfPresent('applyEligibility');
     clickIfPresent('saveFraming');
     clickIfPresent('applyOptimizer');
+    markSettingsSaveStatus('Saved');
   }, { capture: true });
-
-  const settingsScroll = document.querySelector('#settingsPanel .panel-scroll');
-  if (settingsScroll && !document.getElementById('settingsAutosaveNote')) {
-    const note = document.createElement('div');
-    note.id = 'settingsAutosaveNote';
-    note.className = 'autosave-note';
-    note.textContent = 'Changes apply automatically. Delete is the only destructive action.';
-    settingsScroll.prepend(note);
-  }
 }
 
 function yesStats(path) {
@@ -206,14 +207,9 @@ function renderActionCenter() {
     const action = document.createElement('button');
     action.type = 'button';
     action.className = 'word-action omit';
-    action.textContent = 'Omit';
+    action.textContent = 'View';
     action.addEventListener('click', () => {
-      const meta = getMeta();
-      meta.omitted = Array.from(new Set([...(meta.omitted || []), row.word]));
-      saveListMeta();
-      rebuildTree();
-      impactCache.key = '';
-      renderLab();
+      openWordDetail(row.word);
     });
     card.append(main, action);
     center.append(card);

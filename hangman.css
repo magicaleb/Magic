@@ -22,8 +22,10 @@ html[data-display-mode="standalone"] #app,html[data-display-mode="fullscreen"] #
 .tool-btn:active,.panel-btn:active,.settings-action:active,.lab-tab:active{transform:translateY(1px)}
 #peek{position:static;order:3;flex:0 0 12px;width:100%;height:12px;padding:0 10px 2px;overflow:hidden;background:var(--toolbar-bottom);color:transparent;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:8px;font-weight:400;line-height:10px;letter-spacing:.02em;text-align:right;white-space:nowrap;text-overflow:ellipsis;opacity:1;pointer-events:none}
 #peek.show{color:rgba(26,24,20,.25)}
-#perfDot{position:absolute;left:9px;bottom:14px;z-index:2;color:#777;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;opacity:0;pointer-events:none}
-#perfDot.show{opacity:.7}
+#perfDot{position:absolute;left:3px;bottom:8px;z-index:3;min-width:30px;min-height:28px;padding:11px 10px 2px 3px;border:0;background:transparent;color:#4f4b45;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:7px;font-weight:700;line-height:1;letter-spacing:-.02em;text-align:left;opacity:0;pointer-events:none}
+#perfDot.show{opacity:.28}
+#perfDot.lie-available{opacity:.36;pointer-events:auto}
+#perfDot.lie-armed{opacity:.42}
 .overlay-panel{position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;width:100%;height:var(--app-height);overflow:hidden;padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));background:var(--bg);touch-action:pan-y}
 .panel-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:0 0 auto;padding-bottom:10px;border-bottom:1px solid var(--faint)}
 .panel-header h1{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px}

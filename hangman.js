@@ -12,6 +12,7 @@ function hidePanel(panel) {
 
 function openSettings() {
   refreshSettings();
+  if (typeof showSettingsGroup === 'function') showSettingsGroup('performance');
   showPanel(settingsPanel);
 }
 
@@ -25,18 +26,12 @@ function pluralWords(number) {
   return `${number} word${number === 1 ? '' : 's'}`;
 }
 
-function optimizerLabel(mode) {
-  return {
-    fastest: 'Fastest Average',
-    balanced: 'Balanced Worst Case',
-    moreNos: 'More NOs',
-    longNoRuns: 'Theatrical NOs',
-    custom: 'Custom'
-  }[mode] || mode;
+function optimizerLabel() {
+  return 'Progressive';
 }
 
 function renderOptimizerDescription() {
-  byId('optimizerDescription').textContent = OPTIMIZER_DESCRIPTIONS[optimizerSelect.value] || '';
+  byId('optimizerDescription').textContent = 'Looks ahead across future branches. It first minimizes the worst-case number of NO answers, then typical NOs, typical questions, and maximum questions.';
 }
 
 function renderInputModeDescription() {
@@ -47,12 +42,28 @@ function renderInputModeDescription() {
     shortMax: Number(byId('shortMax').value) || 5,
     mediumMax: Number(byId('mediumMax').value) || 7
   };
-  const parts = [];
-  if (meta.lengthMode === 'exact') parts.push('Tap Hangman, draw one blank line per letter, then tap Hangman again. The filtered first question appears only in the faint reveal strip.');
-  if (meta.lengthMode === 'bucket') parts.push(`Before starting, hold Hangman and release in the left, middle, or right third for Short (≤${meta.shortMax}), Medium (${meta.shortMax + 1}–${meta.mediumMax}), or Long (${meta.mediumMax + 1}+).`);
-  if (meta.vowelMode) parts.push('Before starting, hold Solve and release left, middle, or right for 1, 2, or 3+ distinct vowels. With a known limit of 1 or 2, the tree stops asking vowels after that many vowel YES answers.');
-  if (!parts.length) parts.push('No pre-filter is used. Note the First Question in Settings before performing.');
-  byId('inputModeDescription').textContent = parts.join(' ');
+  const box = byId('inputModeDescription');
+  const steps = [];
+  if (meta.lengthMode === 'exact') {
+    steps.push('Tap Hangman, draw one blank for every letter, then tap Hangman again.');
+  } else if (meta.lengthMode === 'bucket') {
+    steps.push(`Hold Hangman and release left for Short (≤${meta.shortMax}), center for Medium (${meta.shortMax + 1}–${meta.mediumMax}), or right for Long (${meta.mediumMax + 1}+).`);
+  }
+  if (meta.vowelMode) {
+    steps.push('Hold Solve and release left for 1, center for 2, or right for 3+ distinct vowels.');
+  }
+  if (steps.length) steps.push('Tap Hangman to begin. The filtered first question appears in the faint reveal strip and stays available until your first answer.');
+  else steps.push('No secret input is used. Memorize the first question at the top of Performance settings, then tap Hangman to begin.');
+  box.replaceChildren(...steps.map((text, index) => {
+    const row = document.createElement('div');
+    row.className = 'secret-input-step';
+    const number = document.createElement('strong');
+    number.textContent = String(index + 1);
+    const copy = document.createElement('span');
+    copy.textContent = text;
+    row.append(number, copy);
+    return row;
+  }));
 }
 
 function renderWords() {
@@ -279,8 +290,13 @@ createListBtn.addEventListener('click', () => {
   if (!name || !words.length) return;
   lists[name] = words;
   listMeta[name] = defaultMetaFor(name);
+  currentListName = name;
+  localStorage.setItem(STORAGE_KEYS.activeList, currentListName);
   saveLists();
   saveListMeta();
+  resetInputState();
+  rebuildTree();
+  clearAll();
   byId('newListName').value = '';
   byId('newListWords').value = '';
   refreshSettings();
@@ -291,9 +307,8 @@ function isExploreModeEnabled() {
 }
 
 function syncExploreButton() {
-  const enabled = isExploreModeEnabled();
-  btnExplore.hidden = !enabled;
-  toolbar.classList.toggle('explore-enabled', enabled);
+  btnExplore.hidden = true;
+  toolbar.classList.remove('explore-enabled');
   scheduleResize();
 }
 
@@ -338,5 +353,6 @@ function closeExplore() {
   if (exploreReturnToSettings) {
     exploreReturnToSettings = false;
     openSettings();
+    if (typeof showSettingsGroup === 'function') showSettingsGroup('words');
   }
 }
