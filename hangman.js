@@ -26,14 +26,12 @@ function pluralWords(number) {
   return `${number} word${number === 1 ? '' : 's'}`;
 }
 
-function optimizerLabel(mode) {
-  return mode === 'longNoRuns' ? 'Dramatic' : 'Efficient';
+function optimizerLabel() {
+  return 'Progressive';
 }
 
 function renderOptimizerDescription() {
-  byId('optimizerDescription').textContent = optimizerSelect.value === 'longNoRuns'
-    ? 'Favors convincing runs of NO answers. It can take slightly longer, but usually feels more theatrical.'
-    : 'Keeps performances predictable and avoids unusually long question paths.';
+  byId('optimizerDescription').textContent = 'Looks ahead across future branches. It first minimizes the worst-case number of NO answers, then typical NOs, typical questions, and maximum questions.';
 }
 
 function renderInputModeDescription() {
@@ -44,12 +42,28 @@ function renderInputModeDescription() {
     shortMax: Number(byId('shortMax').value) || 5,
     mediumMax: Number(byId('mediumMax').value) || 7
   };
-  const parts = [];
-  if (meta.lengthMode === 'exact') parts.push('Tap Hangman, draw one blank line per letter, then tap Hangman again. The filtered first question appears in the discreet reveal strip.');
-  if (meta.lengthMode === 'bucket') parts.push(`Before starting, hold Hangman and release in the left, middle, or right third for Short (≤${meta.shortMax}), Medium (${meta.shortMax + 1}–${meta.mediumMax}), or Long (${meta.mediumMax + 1}+).`);
-  if (meta.vowelMode) parts.push('Before starting, hold Solve and release left, middle, or right for 1, 2, or 3+ distinct vowels. With a known limit of 1 or 2, the tree stops asking vowels after that many vowel YES answers.');
-  if (!parts.length) parts.push('No secret input is used. The opening question is shown at the top of Performance settings.');
-  byId('inputModeDescription').textContent = parts.join(' ');
+  const box = byId('inputModeDescription');
+  const steps = [];
+  if (meta.lengthMode === 'exact') {
+    steps.push('Tap Hangman, draw one blank for every letter, then tap Hangman again.');
+  } else if (meta.lengthMode === 'bucket') {
+    steps.push(`Hold Hangman and release left for Short (≤${meta.shortMax}), center for Medium (${meta.shortMax + 1}–${meta.mediumMax}), or right for Long (${meta.mediumMax + 1}+).`);
+  }
+  if (meta.vowelMode) {
+    steps.push('Hold Solve and release left for 1, center for 2, or right for 3+ distinct vowels.');
+  }
+  if (steps.length) steps.push('Tap Hangman to begin. The filtered first question appears in the faint reveal strip and stays available until your first answer.');
+  else steps.push('No secret input is used. Memorize the first question at the top of Performance settings, then tap Hangman to begin.');
+  box.replaceChildren(...steps.map((text, index) => {
+    const row = document.createElement('div');
+    row.className = 'secret-input-step';
+    const number = document.createElement('strong');
+    number.textContent = String(index + 1);
+    const copy = document.createElement('span');
+    copy.textContent = text;
+    row.append(number, copy);
+    return row;
+  }));
 }
 
 function renderWords() {
@@ -342,4 +356,3 @@ function closeExplore() {
     if (typeof showSettingsGroup === 'function') showSettingsGroup('words');
   }
 }
-
