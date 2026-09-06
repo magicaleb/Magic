@@ -1,7 +1,7 @@
 'use strict';
 
-const SETTINGS_VERSION = '2.5.0';
-const SETTINGS_DATE = 'Aug 4, 2026';
+const SETTINGS_VERSION = '2.6.0';
+const SETTINGS_DATE = 'Sep 6, 2026';
 let lookaheadImpactCache = { key: '', rows: [] };
 
 function settingsSectionByTitle(title) {
@@ -130,6 +130,12 @@ function updateVersionForSettingsLayout() {
     article.innerHTML = '<h2>V2.5.0 · Aug 4, 2026</h2><p>Added optional Late Lie Recovery. After enough truthful narrowing, a discreet green cue appears only when an exact decision plan can still identify the word despite one future false letter answer.</p>';
     changelog.prepend(article);
   }
+  if (changelog && !changelog.querySelector('[data-version="2.6.0"]')) {
+    const article = document.createElement('article');
+    article.dataset.version = '2.6.0';
+    article.innerHTML = '<h2>V2.6.0 · Sep 6, 2026</h2><p>Added known-letter position filtering by covert toolbar swipe, optional live IN/OUT candidate counts below Solve, cumulative position constraints, exact Undo support, and best-effort haptic confirmation where the browser supports vibration.</p>';
+    changelog.prepend(article);
+  }
 }
 
 installSettingsLayout();
@@ -137,7 +143,7 @@ updateVersionForSettingsLayout();
 ['change', 'input'].forEach((eventName) => document.getElementById('settingsPanel')?.addEventListener(eventName, () => requestAnimationFrame(refreshSettingsOverview)));
 
 const lateLieScript = document.createElement('script');
-lateLieScript.src = './hangman-lie.js?v=2.5.0';
+lateLieScript.src = './hangman-lie.js?v=2.6.0';
 lateLieScript.async = false;
 lateLieScript.addEventListener('load', () => {
   btnClear.addEventListener('click', resetLateLieSession);
@@ -146,5 +152,10 @@ lateLieScript.addEventListener('load', () => {
     syncLateLieDot();
   });
   btnSolve.addEventListener('pointerup', () => requestAnimationFrame(syncLateLieDot));
+
+  const positionScript = document.createElement('script');
+  positionScript.src = './hangman-position.js?v=2.6.0';
+  positionScript.async = false;
+  document.head.append(positionScript);
 });
 document.head.append(lateLieScript);
