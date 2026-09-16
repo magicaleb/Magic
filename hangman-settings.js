@@ -41,6 +41,17 @@ function updateVersionForSettings() {
   if (current) current.textContent = `Current: V${SETTINGS_VERSION}`;
 }
 
+function loadPositionSwipeFeature() {
+  if (document.querySelector('script[data-position-swipe]')) return;
+  const script = document.createElement('script');
+  script.src = './hangman-position.js?v=2.7.1';
+  script.async = false;
+  script.dataset.positionSwipe = '1';
+  document.head.append(script);
+}
+
 installSettingsTabs();
 updateVersionForSettings();
+if (document.readyState === 'complete') loadPositionSwipeFeature();
+else window.addEventListener('load', loadPositionSwipeFeature, { once: true });
 
